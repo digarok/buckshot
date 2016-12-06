@@ -6,7 +6,7 @@ test -f buckshot.dmg && rm buckshot.dmg
 ./create-dmg \
   --volname "buckshot" \
   --volicon "../assets/icons.icns" \
-  --background "../../gsplus/assets/gsp_dmg_bg_600x500.png" \
+  --background "../assets/buckshot_dmg_bg_600x500.png" \
   --window-pos 200 120 \
   --window-size 600 500 \
   --icon-size 100 \

@@ -3,13 +3,20 @@ DDIR=buckshot-osx/buckshot.app
 ADIR=assets
 
 mkdir -p $DDIR
+# make app bundle with qt frameworks using macdeployqt
+~/Qt/5.7/clang_64/bin/macdeployqt build-buckshot-Desktop_Qt_5_7_0_clang_64bit-Release/buckshot.app
+# copy to dmg staging dir
 cp -R build-buckshot-Desktop_Qt_5_7_0_clang_64bit-Release/buckshot.app $DEXTRAS
 
 mkdir -p $DDIR/Contents/MacOS
 mkdir -p $DDIR/Contents/Resources
 cp $ADIR/Info.plist $DDIR/Contents
 cp $ADIR/icons.icns $DDIR/Contents/Resources
-dylibbundler -od -b -x $DDIR/Contents/MacOS/buckshot -d $DDIR/Contents/libs/
+# not needed?
+#dylibbundler -od -b -x $DDIR/Contents/MacOS/buckshot -d $DDIR/Contents/libs/
+
+
+
 
 # files to include in dmg
 #cp doc/gsplusmanual.pdf $DEXTRAS
