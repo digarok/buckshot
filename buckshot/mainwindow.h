@@ -54,7 +54,10 @@ private:
 
     QTemporaryDir *tmpDir;
     QString tmpDirPath;
-    static const QString imageName; //"saved"
+    static const QString imageName;     //"saved"
+    static const QString version;       //"0.00"
+    static const QString programName;   //"buckshot"
+
     QString inputImgPath;
     QString previewImgPath;
     QString outputImgPath;
