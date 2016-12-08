@@ -4,7 +4,6 @@
 #include "qprocess.h"
 #include "qdebug.h"
 #include "qtimer.h"
-#include <Qtcore>
 #include "qmessagebox.h"
 
 const QString MainWindow::programName = QString("buckshot");
