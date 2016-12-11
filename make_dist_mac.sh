@@ -21,7 +21,8 @@ cp $ADIR/icons.icns $DDIR/Contents/Resources
 # files to include in dmg
 #cp doc/gsplusmanual.pdf $DEXTRAS
 #cp doc/gsplusmanual.txt $DEXTRAS
-cp doc/README.txt $DEXTRAS
+cp README.txt $DEXTRAS
+cp LICENSE.txt $DEXTRAS
 cp ../b2d $DDIR/Contents/MacOS
 #cp COPYING.txt $DEXTRAS
 
