@@ -23,9 +23,9 @@ cp $ADIR/icons.icns $DDIR/Contents/Resources
 #cp doc/gsplusmanual.txt $DEXTRAS
 cp README.txt $DEXTRAS
 cp LICENSE.txt $DEXTRAS
-cp ../b2d $DDIR/Contents/MacOS
-#cp COPYING.txt $DEXTRAS
 
-#tar -cvzf gsplus-osx.tar.gz gsplus-osx/
+# COPY BINARIES FROM EXTERNAL PROJECTS 
+cp ../b2d $DDIR/Contents/MacOS
+cp ../tools/Cadius $DDIR/Contents/MacOS
 
 # packaging now in DMG script

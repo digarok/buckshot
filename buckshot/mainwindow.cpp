@@ -5,9 +5,10 @@
 #include "qdebug.h"
 #include "qtimer.h"
 #include "qmessagebox.h"
+#include "qinputdialog.h"
 
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.00");
+const QString MainWindow::version = QString("0.02");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -137,6 +138,7 @@ void MainWindow::on_pushButton_sourceFilename_clicked()
         QSize sourceSize = ui->label_source->pixmap()->size();
         QString resolutionString = QString("%1 x %2").arg(sourceSize.width()).arg(sourceSize.height());
         ui->label_sourceResolution->setText(resolutionString);
+        updateNeeded=1;
     }
 }
 
@@ -233,7 +235,6 @@ void MainWindow::on_pushButton_preview_clicked()
 
 
     QString converterPath = "/Users/dbrock/appleiigs/grlib/b2d";
-    //converterPath = QString("%1/b2d").arg(QDir::currentPath());
     converterPath = QString("%1/b2d").arg(QCoreApplication::applicationDirPath());
 
     QProcess process;
@@ -333,7 +334,14 @@ void MainWindow::on_checkBox_livePreview_stateChanged(int arg1)
 }
 
 
-void MainWindow::on_pushButton_saveImage_pressed()
+void MainWindow::on_actionWhat_is_this_triggered()
+{
+    QMessageBox msgBox;
+    msgBox.setText("This is an image conversion utility to output images for use on classic 8-bit Apple II computers.\n\nPlease see readme for instructions.\n\nSorry for bugs, it's just a toy.\n\n(c)2016 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckles and does the the actual heavy lifting of conversion!  But don't bug him about this software, please.");
+    msgBox.exec();
+}
+
+void MainWindow::on_pushButton_saveImage_clicked()
 {
     if (ui->label_preview->pixmap() == NULL) {
         ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
@@ -372,9 +380,248 @@ void MainWindow::on_pushButton_saveImage_pressed()
 }
 
 
-void MainWindow::on_actionWhat_is_this_triggered()
+// HOLY CRAP WHAT IS THIS??
+// Well you see, Johnny, this is a layer of hacks to try
+// to wrap CADIUS, but it has no API.  So I can clean this up
+// but it's more of a proof of concept.  I think it'd be
+// smarter to add JSON output to CADIUS in the long run.
+// I consider this small feature a present to the community.
+void MainWindow::on_pushButton_saveToProdos_clicked()
 {
-    QMessageBox msgBox;
-    msgBox.setText("This is an image conversion utility to output images for use on classic 8-bit Apple II computers.\n\nPlease see readme for instructions.\n\nSorry for bugs, it's just a toy.\n\n(c)2016 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckles and does the the actual heavy lifting of conversion!  But don't bug him about this software, please.");
-    msgBox.exec();
+    // @Todo: This isn't appropriate when someone changes res/source and has
+    // a previous preview pixmap, it will think we are all OK.
+    if (ui->label_preview->pixmap() == NULL) {
+        ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
+        return;
+    }
+
+    QString cadiusPath = "/Users/dbrock/appleiigs/tools/Cadius";
+    cadiusPath = QString("%1/Cadius").arg(QCoreApplication::applicationDirPath());
+
+
+    // KSYNTHED=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
+    QString filetype = "06";
+    QString auxtype = "2000";
+
+
+    QString suffix = ".po";
+    QString defaultFilter = tr("All ProDOS Images (*.po *.hdv *.2mg)");
+    QString filters = QString(tr("All ProDOS Images (*.po *.hdv *.2mg);;ProDOS Order (*.po);;HDV (*.hdv);;2MG (*.2mg);;All files (*.*)"));
+
+
+    // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
+    QString prodosImageFile = QFileDialog::getSaveFileName(0, "Choose ProDOS Image to Save to", QDir::currentPath(), filters, &defaultFilter, QFileDialog::DontConfirmOverwrite);
+
+    // ALSO GENERATE PRODOS SAFE BASENAME
+    QFileInfo fi(prodosImageFile);
+    QString prodosVolumeName = fi.baseName().left(15);  // get max volume name
+    // EMPTY FILENAME?!
+    if (prodosImageFile.length() == 0) {
+        return;
+    }
+
+    QString imageSize = "140KB";
+
+    // NOW SEE IF IT'S A NEW FILE OR EXISTING IMAGE
+    QFileInfo check_file(prodosImageFile);
+    // check if file exists and if yes: Is it really a file and no directory?
+    if (check_file.exists() && check_file.isFile()) {
+        // nothing yet.  We'll open it below, either way.
+    } else {
+        // NEW FILE, PROMPT FOR IMAGE SIZE
+        QMessageBox msgBox;
+        msgBox.setText(tr("Select size for new ProDOS image"));
+        msgBox.addButton(tr("Cancel"), QMessageBox::NoRole);
+        QAbstractButton* pButton140 = msgBox.addButton(tr("140KB"), QMessageBox::ApplyRole);
+        QAbstractButton* pButton800 = msgBox.addButton(tr("800KB"), QMessageBox::ApplyRole);
+        msgBox.setDefaultButton(QMessageBox::Yes);
+
+        msgBox.exec();
+
+        if (msgBox.clickedButton()==pButton140) {
+            // set above, nothing to do
+        } else if (msgBox.clickedButton()==pButton800) {
+            imageSize = "800KB";
+        } else {
+            return; // cancelled
+        }
+
+        // NOW CREATE AN IMAGE
+        QProcess process;
+        QStringList args;
+        args << "CREATEVOLUME";
+        args << prodosImageFile;
+        args << prodosVolumeName;
+        args << imageSize;
+        QString commandString = QString("%1 %2").arg(cadiusPath, args.join(" "));
+
+        // RUN THE IMAGE CREATE
+        process.start(cadiusPath,args);
+        process.waitForFinished();  // BLOCKS!!!
+
+        // NOW CHECK AGAIN TO SEE IF OUR IMAGE FILE GOT CREATED
+        if (check_file.exists() && check_file.isFile()) {
+            qDebug() << "IMAGE FILE CREATED.";
+        } else {
+            ui->plainTextEdit_lastCmd->document()->setPlainText(QString("Failed creating image with command: %1").arg(commandString));
+            return;
+        }
+
+        ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
+    }
+
+    // NOW CATALOG WHATEVER IMAGE WE GOT... NEW/EXISTING
+    QProcess cat_process;
+    QStringList cat_args;
+    cat_args << "CATALOG";
+    cat_args << prodosImageFile;
+
+    // RUN THE CATALOG AND GET OUTPUT
+    cat_process.start(cadiusPath,cat_args);
+    cat_process.waitForFinished();  // BLOCKS!!!
+    QString cat_output = QString(cat_process.readAllStandardOutput());
+    qDebug() << "CATALOG OUTPUT (cat_output)\n   " << cat_output;
+
+    // regex scanner index
+    int pos = 0;
+    QStringList list;
+
+    // MUST MATCH FOR NEWLINES (VS USING ^ or &)
+    QRegExp vol_rx("\n(/.{1,15}/)\n");
+    // OVERWRITE PRODOS VOLUME NAME IF WE KNOW BETTER
+    while ((pos = vol_rx.indexIn(cat_output, pos)) != -1) {
+        prodosVolumeName = vol_rx.cap(1);
+        break;
+    }
+
+    // NOW MATCH FOR SOME EXTRA DETAILS JUST BECAUSE WE CAN
+    QRegExp rx("(Block|Free|File|Directory) : (\\d+)");
+    pos = 0;
+
+    while ((pos = rx.indexIn(cat_output, pos)) != -1) {
+        list << rx.cap(1);
+        qDebug() << rx.cap(1);
+        pos += rx.matchedLength();
+    }
+
+    int diskBlocks, diskFree, diskFiles, diskDirs = 0;
+    if (list.length() == 4) {
+        diskBlocks = list[0].toInt();
+        diskFree = list[1].toInt();
+        diskFiles = list[2].toInt();
+        diskDirs = list[3].toInt();
+    } else {
+        ui->plainTextEdit_lastCmd->document()->setPlainText(QString("Failed to catalog ProDOS volume. Make sure that the file is one of: .po .hdv .2mg"));
+        return;
+    }
+
+
+
+    QString a2Filename;
+    QString savedFilename;
+    if (ui->comboBox_outputFormat->currentText() == "LR") {
+        savedFilename = QString("%1/%2.SLO").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1.SLO").arg(imageName.toUpper());
+        auxtype = "400";    // different auxtype (not that is matters)
+    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
+        savedFilename = QString("%1/%2.DLO").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1.DLO").arg(imageName.toUpper());
+        auxtype = "400";    // different auxtype (not that is matters)
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
+        savedFilename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1CH.BIN").arg(imageName.toUpper());
+    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
+        savedFilename = QString("%1/%2.A2FC").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1.A2FC").arg(imageName.toUpper());
+    } else if (ui->comboBox_outputFormat->currentText() == "MONO") {
+        savedFilename = QString("%1/%2M.BIN").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1M.BIN").arg(imageName.toUpper());
+    }
+
+
+    bool ok;
+    QString prodosFileName = QInputDialog::getText(this, tr("Save Image to ProDOS as"),
+                                         tr("ProDOS Name (max 15 chars):"), QLineEdit::Normal,
+                                         a2Filename, &ok);
+    if (ok && !prodosFileName.isEmpty()) {
+        // COPY IT ...  OVER EXISTING NAME?
+        QString saveFile = QString("%1/%2").arg(tmpDirPath,prodosFileName);
+        QFile::copy(savedFilename, saveFile);
+
+        // GENERATE OUR STUPID _FileInformation.txt in the same directory
+        QString fileinfo_text = QString("%1=Type(%2),AuxType(%3),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)").arg(prodosFileName, filetype, auxtype);
+        QString fileinfo_file = QString("%1/_FileInformation.txt").arg(tmpDirPath);
+        qDebug() << "TMP FILE: " << fileinfo_file;
+        QFile file( fileinfo_file );
+        if (file.open(QIODevice::ReadWrite)) {
+            QTextStream stream( &file );
+            stream << fileinfo_text << endl;
+        }
+
+        // NOW ADD / SAVE OUR FILE
+        QProcess addfile_process;
+        QStringList addfile_args;
+        addfile_args << "ADDFILE" << prodosImageFile << prodosVolumeName << saveFile;   // our tmp file
+
+        addfile_process.start(cadiusPath,addfile_args);
+        addfile_process.waitForFinished();  // BLOCKS!!!
+        QString addfile_output = QString(addfile_process.readAllStandardOutput());
+
+        // IF FILE ALREADY EXISTS, ASK IF THEY WANT TO OVERWRITE
+        if (addfile_output.contains("A file already exist with the same nam")) {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this, "File exists in image", "File exists, Replace?",
+                                        QMessageBox::Yes|QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+
+                // ../tools/Cadius DELETEFILE    <[2mg|hdv|po]_image_path>   <prodos_file_path>
+                // YES - DELETE
+                QString deleteFile = QString("%1%2").arg(prodosVolumeName,prodosFileName);
+                qDebug() << "DELETEFILE : " <<deleteFile;
+                QProcess delfile_process;
+                QStringList delfile_args;
+                delfile_args << "DELETEFILE";
+                delfile_args << prodosImageFile;
+                delfile_args << deleteFile;
+
+                // NOW ADD / SAVE OUR FILE
+                delfile_process.start(cadiusPath,delfile_args);
+                delfile_process.waitForFinished();  // BLOCKS!!!
+                QString delfile_output = QString(delfile_process.readAllStandardOutput());
+                // MAYBE CHECK? BUT WE CAN JUST TRY TO RESAVE AND FAIL THERE
+
+                // TRY ADDFILE AGAIN
+                QProcess addfile2_process;
+                QStringList addfile2_args;
+                addfile2_args << "ADDFILE" << prodosImageFile << prodosVolumeName << saveFile;   // our tmp file
+
+                addfile2_process.start(cadiusPath,addfile_args);
+                addfile2_process.waitForFinished();  // BLOCKS!!!
+                QString addfile2_output = QString(addfile2_process.readAllStandardOutput());
+
+                // IF FILE ALREADY EXISTS, ASK IF THEY WANT TO OVERWRITE
+                if (addfile2_output.contains("Error :")) {
+                    ui->plainTextEdit_lastCmd->document()->setPlainText("Save failed.  Couldn't delete/overwrite file?  I really am not sure what went wrong.  Try saving the pictures to your computer and transferring them to ProDOS with another program.");
+                    return;
+                }
+            } else {
+                if (ui->label_preview->pixmap() == NULL) {
+                    ui->plainTextEdit_lastCmd->document()->setPlainText("Save cancelled because file exists.");
+                    return;
+                }
+            }
+        }
+
+
+        // IF WE MADE IT THIS FAR, ALL GOOD?
+        QFile::remove(saveFile);    // remove our tmp file
+        ui->plainTextEdit_lastCmd->document()->setPlainText("File saved.");
+
+    } else {
+        ui->plainTextEdit_lastCmd->document()->setPlainText("Save cancelled.");
+        // cancelled?
+    }
+
+
+    return;
 }
