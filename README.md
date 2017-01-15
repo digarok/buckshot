@@ -9,7 +9,9 @@ The fastest way to get started is to go here [https://apple2.gs/buckshot](https:
 Once you start the program, just "Open Source Image", select the "Apple ][ Display Mode" you want to convert your image to, and click "Preview", or even better, click the "Live Preview" checkbox to get real-time feedback on your conversion settings.  Once you are satisfied with your conversion settings, click "Save Image File" to save in one of the Apple ][ image formats based on the display mode.  If you want to save that image file directly to a ProDOS volume, that is now supported via the "Save To ProDOS" function!  Then you can load it up in your favorit emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.
 
 # Build
-This project is written in C++ using the Qt framework.  It calls out to two external binaries for image conversion ([http://www.appleoldies.ca/bmp2dhr/](b2d)) and ProDOS volume support ([http://www.brutaldeluxe.fr/products/crossdevtools/cadius/](CADIUS)).  You can build and run the project without it, but it won't be able to generate previews or save to ProDOS volumes without those 3rd-party binaries.  The authors of those projects are not involved with this project, but have graciously encouraged my integration attempts with this software.
+This project is written in C++ using the Qt framework.  It calls out to two external binaries for image conversion ([http://www.appleoldies.ca/bmp2dhr/](b2d)) and ProDOS volume support ([http://www.brutaldeluxe.fr/products/crossdevtools/cadius/](CADIUS)).
+
+You can build and run the project without it, but it won't be able to generate previews or save to ProDOS volumes without those 3rd-party binaries.  The authors of those projects are not involved with this project, but have graciously encouraged my integration attempts with this software.
 
 You will need to copy the binaries of those two programs for your platform to the build directory you are running.
 
@@ -29,10 +31,10 @@ This was largely built as a proof-of-concept, and I tried to put it together qui
 # Credits
 I cannot begin to express my gratitude to the heavy lifters who authored the tools under-the-hood of buckshot.  
 
-## bmp2dhr
+### bmp2dhr
 Thanks to Bill Buckels, whose seminal work in image conversion routines, has long inspired me to improve my own IIgs conversion routines. 
 
-## CADIUS
+### CADIUS
 Thanks to Brutal Deluxe, whose tools not only speed up my entire Apple II development pipeline, but also provides the ProDOS image support here.
 
 
