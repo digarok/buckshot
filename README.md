@@ -32,7 +32,7 @@ This was largely built as a proof-of-concept, and I tried to put it together qui
 I cannot begin to express my gratitude to the heavy lifters who authored the tools under-the-hood of buckshot.  
 
 ### bmp2dhr
-Thanks to Bill Buckels, whose seminal work in image conversion routines, has long inspired me to improve my own IIgs conversion routines. 
+Thanks to Bill Buckels, whose seminal work in image conversion routines has long inspired me to improve my own IIgs conversion routines. 
 
 ### CADIUS
 Thanks to Brutal Deluxe, whose tools not only speed up my entire Apple II development pipeline, but also provides the ProDOS image support here.
