@@ -21,7 +21,7 @@ cp $ADIR/icons.icns $DDIR/Contents/Resources
 # files to include in dmg
 #cp doc/gsplusmanual.pdf $DEXTRAS
 #cp doc/gsplusmanual.txt $DEXTRAS
-cp README.txt $DEXTRAS
+cp README.md $DEXTRAS/README.txt
 cp LICENSE.txt $DEXTRAS
 
 # COPY BINARIES FROM EXTERNAL PROJECTS 
