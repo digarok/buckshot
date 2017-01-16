@@ -29,7 +29,7 @@ This was largely built as a proof-of-concept, and I tried to put it together qui
 
 
 # Credits
-I cannot begin to express my gratitude to the heavy lifters who authored the tools under-the-hood of buckshot.  
+I cannot begin to express my gratitude to the excellent programmers who authored the tools doing the heavy lifting under-the-hood of buckshot.  
 
 ### bmp2dhr
 Thanks to Bill Buckels, whose seminal work in image conversion routines has long inspired me to improve my own IIgs conversion routines. 
