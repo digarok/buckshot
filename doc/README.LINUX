@@ -1,6 +1,11 @@
-The conversion tool requires 32 bit libraries for b2d to function. 
+To launch buckshot on Linux, it's best to just run buckshot.sh from the command line.  
 
-If you can load images, but can't see any preview, your system probably doesn't have these installed, but it's easy to remedy. 
+------------------------------------------
+
+
+NOTE: The conversion tool requires 32 bit libraries for b2d to function. 
+
+If you can load images, but can't see any preview images, your system probably doesn't have these installed, but it's easy to remedy. 
 
 Just install libc6-i386 with the following command (Ubuntu):
 
