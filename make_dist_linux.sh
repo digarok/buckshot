@@ -17,6 +17,7 @@ cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/b2d $DISTDIR
 cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/Cadius $DISTDIR
 cp platform/linux/buckshot.sh $DISTDIR
 cp doc/README.LINUX $DISTDIR
+cp README.md $DISTDIR
 
 # As reported by ldd
 cp /home/builder/Qt/5.7/gcc_64/lib/libicudata.so.56 $LIBDIR
