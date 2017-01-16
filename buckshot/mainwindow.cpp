@@ -337,7 +337,15 @@ void MainWindow::on_checkBox_livePreview_stateChanged(int arg1)
 void MainWindow::on_actionWhat_is_this_triggered()
 {
     QMessageBox msgBox;
-    msgBox.setText("This is an image conversion utility to output images for use on classic 8-bit Apple II computers.\n\nPlease see readme for instructions.\n\nSorry for bugs, it's just a toy.\n\n(c)2016 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckles and does the the actual heavy lifting of conversion!  But don't bug him about this software, please.");
+    msgBox.setText("Image conversion tool for OSX/Windows/Linux\n"
+                   "Take modern image formats (PNG, JPEG, BMP, etc) and convert them for use in your Apple II programs or just for fun.\n\n\n"
+                   "*USAGE*\n"
+                   "Once you start the program, just \"Open Source Image\", select the \"Apple ][ Display Mode\" you want to convert your image to, "
+                   "and click \"Preview\", or even better, click the \"Live Preview\" checkbox to get real-time feedback on your conversion settings.\n\n"
+                   "Once you are satisfied with your conversion settings, click \"Save Image File\" to save in one of the Apple ][ image formats based on the display mode.  "
+                   "If you want to save that image file directly to a ProDOS volume, that is now supported via the \"Save To ProDOS\" function!\n\n"
+                   "Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
+                   "(c)2016-2017 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
     msgBox.exec();
 }
 
