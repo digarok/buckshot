@@ -1,19 +1,22 @@
 #!/bin/bash
 
-BUILDDIR=~/buckshot-dist-linux
-LIBDIR=$BUILDDIR/lib
-PLATFORMDIR=$BUILDDIR/platforms
+VERSION=0.2
+BUILDDIR=~
+DISTDIR=$BUILDDIR/buckshot-dist-linux
+LIBDIR=$DISTDIR/lib
+PLATFORMDIR=$DISTDIR/platforms
 
 
-rm -rf $BUILDDIR
-mkdir -p $BUILDDIR
+rm -rf $DISTDIR
+mkdir -p $DISTDIR
 mkdir -p $LIBDIR
 mkdir -p $PLATFORMDIR
 
-cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/buckshot $BUILDDIR
-cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/b2d $BUILDDIR
-cp platform/linux/buckshot.sh $BUILDDIR
-cp doc/README.LINUX $BUILDDIR
+cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/buckshot $DISTDIR
+cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/b2d $DISTDIR
+cp build-buckshot-Desktop_Qt_5_7_0_GCC_64bit-Release/Cadius $DISTDIR
+cp platform/linux/buckshot.sh $DISTDIR
+cp doc/README.LINUX $DISTDIR
 
 # As reported by ldd
 cp /home/builder/Qt/5.7/gcc_64/lib/libicudata.so.56 $LIBDIR
@@ -25,5 +28,6 @@ cp /home/builder/Qt/5.7/gcc_64/lib/libQt5Gui.so.5 $LIBDIR
 cp /home/builder/Qt/5.7/gcc_64/lib/libQt5Widgets.so.5 $LIBDIR
 cp /home/builder/Qt/5.7/gcc_64/lib/libQt5XcbQpa.so.5 $LIBDIR
 cp /home/builder/Qt/5.7/gcc_64/plugins/platforms/libqxcb.so $PLATFORMDIR
-cp -r /home/builder/Qt/5.7/gcc_64/plugins/imageformats $BUILDDIR
+cp -r /home/builder/Qt/5.7/gcc_64/plugins/imageformats $DISTDIR
 
+tar -cvjf buckshot-dist-linux_$VERSION.tar.bz2 -C $BUILDDIR `basename $DISTDIR`
