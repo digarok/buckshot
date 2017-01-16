@@ -1,0 +1,9 @@
+The conversion tool requires 32 bit libraries for b2d to function. 
+
+If you can load images, but can't see any preview, your system probably doesn't have these installed, but it's easy to remedy. 
+
+Just install libc6-i386 with the following command (Ubuntu):
+
+  sudo apt-get install libc6-i386
+
+
