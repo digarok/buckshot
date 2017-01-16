@@ -3,8 +3,19 @@ An image conversion tool for Mac OSX, Windows and Linux.  Take modern image form
 
 ![Screenshot of starting the program](doc/web/Screenshot.png "Screenshot of starting the program")
 
-# Usage
+# Installation and Launching
 The fastest way to get started is to go here [https://apple2.gs/buckshot](https://apple2.gs/buckshot) where you can download the latest builds for Mac OSX, Windows and Linux.
+
+### Mac OSX
+Download and open the DMG file.  Drag buckshot into your applications and launch it from there.
+
+### Windows
+Download and unzip to the folder where you want it installed.  Simply run the buckshot.exe from there.
+
+### Linux (Debian)
+Download and untar, then run the buckshot.sh script.  If you have problems see the README.LINUX file. 
+
+# Usage
 
 Once you start the program, just "Open Source Image", select the "Apple ][ Display Mode" you want to convert your image to, and click "Preview", or even better, click the "Live Preview" checkbox to get real-time feedback on your conversion settings.  Once you are satisfied with your conversion settings, click "Save Image File" to save in one of the Apple ][ image formats based on the display mode.  If you want to save that image file directly to a ProDOS volume, that is now supported via the "Save To ProDOS" function!  Then you can load it up in your favorit emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.
 
