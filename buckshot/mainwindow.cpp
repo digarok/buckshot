@@ -516,7 +516,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     QStringList list;
 
     // MUST MATCH FOR NEWLINES (VS USING ^ or &)
-    QRegExp vol_rx("\n(/.{1,15}/)\n");
+    QRegExp vol_rx("\n(/.{1,15}/)\r?\n");
     // OVERWRITE PRODOS VOLUME NAME IF WE KNOW BETTER
     while ((pos = vol_rx.indexIn(cat_output, pos)) != -1) {
         prodosVolumeName = vol_rx.cap(1);
