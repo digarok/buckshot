@@ -9,7 +9,7 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.02");
+const QString MainWindow::version = QString("0.03");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
