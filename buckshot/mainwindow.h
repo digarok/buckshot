@@ -41,6 +41,8 @@ private slots:
     void on_pushButton_saveToProdos_clicked();
 
 
+    void on_comboBox_dithering_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
     void updateInputSize();

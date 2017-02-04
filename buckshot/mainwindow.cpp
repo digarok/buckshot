@@ -6,7 +6,8 @@
 #include "qtimer.h"
 #include "qmessagebox.h"
 #include "qinputdialog.h"
-
+#include "qformlayout.h"
+#include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
 const QString MainWindow::version = QString("0.02");
 const QString MainWindow::imageName = QString("saved");
@@ -48,6 +49,21 @@ MainWindow::MainWindow(QWidget *parent) :
                 << "640 x 400 - Classic Size"
                 << "640 x 480 - Classic Size";
     ui->comboBox_inputResolution->addItems(inputResolutions);
+
+    // POPULATE DITHERING COMBOBOX
+    QStringList ditheringAlgorithms;
+    ditheringAlgorithms << "Default"
+                        << "1- Floyd-Steinberg"
+                        << "2- Jarvis"
+                        << "3- Stucki"
+                        << "4- Atkinson"
+                        << "5- Burkes"
+                        << "6- Sierra"
+                        << "7- Sierra Two"
+                        << "8- Sierra Lite"
+                        << "9- Buckels";
+    ui->comboBox_dithering->addItems(ditheringAlgorithms);
+
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
     updateDisplayModes();
 
@@ -251,7 +267,12 @@ void MainWindow::on_pushButton_preview_clicked()
         args << colorBleedArg;
     }
 
-    args <<  "V";   // MUST HAVE!  OUR PREVIEW IMAGE
+    if (ui->comboBox_dithering->currentIndex() > 0) {
+        QString ditherArg = QString("D%1").arg(ui->comboBox_dithering->currentIndex());
+        args << ditherArg;
+    }
+
+    args <<  "V";   // MUST HAVE!  V FLAG GENERATES OUR PREVIEW IMAGE
 
     // RUN THE CONVERTER SCRIPT
     process.start(converterPath,args);
@@ -530,11 +551,11 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     if (ui->comboBox_outputFormat->currentText() == "LR") {
         savedFilename = QString("%1/%2.SLO").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1.SLO").arg(imageName.toUpper());
-        auxtype = "400";    // different auxtype (not that is matters)
+        auxtype = "0400";    // different auxtype (not that it matters)
     } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
         savedFilename = QString("%1/%2.DLO").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1.DLO").arg(imageName.toUpper());
-        auxtype = "400";    // different auxtype (not that is matters)
+        auxtype = "0400";    // different auxtype (not that it matters)
     } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
         savedFilename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1CH.BIN").arg(imageName.toUpper());
@@ -547,10 +568,55 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     }
 
 
-    bool ok;
-    QString prodosFileName = QInputDialog::getText(this, tr("Save Image to ProDOS as"),
-                                         tr("ProDOS Name (max 15 chars):"), QLineEdit::Normal,
-                                         a2Filename, &ok);
+    bool ok = false;
+    QString prodosFileName;
+
+
+    // manually build name/auxtype dialog
+    QDialog dialog(this);
+    // Use a layout allowing to have a label next to each field
+    QFormLayout form(&dialog);
+
+    // Add some text above the fields
+    form.addRow(new QLabel(tr("Save Image to ProDOS")));
+
+    // Add the lineEdits with their respective labels
+    QList<QLineEdit *> fields;
+
+    QLineEdit *lineEdit = new QLineEdit(&dialog);
+    lineEdit->setText(a2Filename);
+    QString label = QString("ProDOS Name (max 15 chars):");
+    form.addRow(label, lineEdit);
+
+    QLineEdit *lineEdit2 = new QLineEdit(&dialog);
+    lineEdit2->setText(auxtype);
+    lineEdit2->setInputMask("HHHh");
+    QString label2 = QString("Change auxtype (optional): $");
+    form.addRow(label2, lineEdit2);
+
+    fields << lineEdit << lineEdit2;
+
+
+    // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    // Show the dialog as modal
+    if (dialog.exec() == QDialog::Accepted) {
+        // If the user didn't dismiss the dialog, do something with the fields
+        prodosFileName = fields[0]->text();
+        auxtype = fields[1]->text();
+        ok = true;
+    }
+
+
+
+
+
+
     if (ok && !prodosFileName.isEmpty()) {
         // COPY IT ...  OVER EXISTING NAME?
         QString saveFile = QString("%1/%2").arg(tmpDirPath,prodosFileName);
@@ -632,4 +698,9 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
 
     return;
+}
+
+void MainWindow::on_comboBox_dithering_currentIndexChanged(int index)
+{
+    updateNeeded = 1;
 }
