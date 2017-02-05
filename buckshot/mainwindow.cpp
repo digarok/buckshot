@@ -9,7 +9,7 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.03");
+const QString MainWindow::version = QString("0.03h"); // hotfix
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -41,13 +41,13 @@ MainWindow::MainWindow(QWidget *parent) :
     // POPULATE RESOLUTION COMBOBOX
     QStringList inputResolutions;
     inputResolutions << "40 x 48   - Full Scale LGR"
-                << "80 x 48   - Full Scale DLGR"
-                << "140 x 192 - Full Scale (HGR & DHGR)"
-                << "280 x 192 - Double Width Scale (HGR & DHGR)"
-                << "320 x 200 - Classic Size"
-                << "560 x 384 - Quadruple Width, Double Height Scale"
-                << "640 x 400 - Classic Size"
-                << "640 x 480 - Classic Size";
+                     << "80 x 48   - Full Scale DLGR"
+                     << "140 x 192 - Full Scale (HGR & DHGR)"
+                     << "280 x 192 - Double Width Scale (HGR & DHGR)"
+                     << "320 x 200 - Classic Size"
+                     << "560 x 384 - Quadruple Width, Double Height Scale"
+                     << "640 x 400 - Classic Size"
+                     << "640 x 480 - Classic Size";
     ui->comboBox_inputResolution->addItems(inputResolutions);
 
     // POPULATE DITHERING COMBOBOX
@@ -161,41 +161,41 @@ void MainWindow::on_pushButton_sourceFilename_clicked()
 void MainWindow::updateInputSize()
 {
     switch (ui->comboBox_inputResolution->currentIndex()) {
-        case 0:
-            inputWidth = 40;
-            inputHeight = 48;
-            break;
-        case 1:
-            inputWidth = 80;
-            inputHeight = 48;
-            break;
-        case 2:
-            inputWidth = 140;
-            inputHeight = 192;
-            break;
-        case 3:
-            inputWidth = 280;
-            inputHeight = 192;
-            break;
-        case 4:
-            inputWidth = 320;
-            inputHeight = 200;
-            break;
-        case 5:
-            inputWidth = 560;
-            inputHeight = 384;
-            break;
-        case 6:
-            inputWidth = 640;
-            inputHeight = 400;
-            break;
-        case 7:
-            inputWidth = 640;
-            inputHeight = 480;
-            break;
-        default:
-            qDebug() << "default, error?";
-            break;
+    case 0:
+        inputWidth = 40;
+        inputHeight = 48;
+        break;
+    case 1:
+        inputWidth = 80;
+        inputHeight = 48;
+        break;
+    case 2:
+        inputWidth = 140;
+        inputHeight = 192;
+        break;
+    case 3:
+        inputWidth = 280;
+        inputHeight = 192;
+        break;
+    case 4:
+        inputWidth = 320;
+        inputHeight = 200;
+        break;
+    case 5:
+        inputWidth = 560;
+        inputHeight = 384;
+        break;
+    case 6:
+        inputWidth = 640;
+        inputHeight = 400;
+        break;
+    case 7:
+        inputWidth = 640;
+        inputHeight = 480;
+        break;
+    default:
+        qDebug() << "default, error?";
+        break;
     }
 
     QSize sourceSize = ui->label_source->pixmap()->size();
@@ -230,21 +230,21 @@ void MainWindow::on_pushButton_preview_clicked()
     // NOW FIND OUR OUTPUT FORMAT
     QString outputFormat = "H";     // HIRES
     switch (ui->comboBox_outputFormat->currentIndex()) {
-        case 0:
-            outputFormat = "L";
-            break;
-        case 1:
-            outputFormat = "DL";
-            break;
-        case 2:
-            outputFormat = "H";
-            break;
-        case 3:
-            outputFormat = "D";
-            break;
-        case 4:
-            outputFormat = "mono";
-            break;
+    case 0:
+        outputFormat = "L";
+        break;
+    case 1:
+        outputFormat = "DL";
+        break;
+    case 2:
+        outputFormat = "H";
+        break;
+    case 3:
+        outputFormat = "D";
+        break;
+    case 4:
+        outputFormat = "mono";
+        break;
     }
 
     QString tempDir = "/tmp";
@@ -405,6 +405,9 @@ void MainWindow::on_pushButton_saveImage_clicked()
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
     QString saveFile = QFileDialog::getSaveFileName(0, "Save file", QDir::currentPath(), filters, &defaultFilter);
+    if (QFile::exists(saveFile)) {
+        QFile::remove(saveFile);
+    }
     QFile::copy(a2filename, saveFile);
 }
 
@@ -642,10 +645,10 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         QString addfile_output = QString(addfile_process.readAllStandardOutput());
 
         // IF FILE ALREADY EXISTS, ASK IF THEY WANT TO OVERWRITE
-        if (addfile_output.contains("A file already exist with the same nam")) {
+        if (addfile_output.contains("A file already exist with the same name")) {
             QMessageBox::StandardButton reply;
             reply = QMessageBox::question(this, "File exists in image", "File exists, Replace?",
-                                        QMessageBox::Yes|QMessageBox::No);
+                                          QMessageBox::Yes|QMessageBox::No);
             if (reply == QMessageBox::Yes) {
 
                 // ../tools/Cadius DELETEFILE    <[2mg|hdv|po]_image_path>   <prodos_file_path>
