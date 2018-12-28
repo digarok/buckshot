@@ -43,12 +43,16 @@ private slots:
     void on_comboBox_dithering_currentIndexChanged(int index);
     void on_comboBox_previewPalette_currentIndexChanged(int index);
 
+    void on_pushButton_savePreview_clicked();
 
 private:
     Ui::MainWindow *ui;
     void updateInputSize();
     void livePreview();
     void updateDisplayModes();
+    bool check_canSave();
+    bool check_canPreview();
+
     int inputWidth;
     int inputHeight;
     bool updateNeeded;

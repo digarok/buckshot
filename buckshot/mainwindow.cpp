@@ -9,7 +9,7 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.03h"); // hotfix
+const QString MainWindow::version = QString("0.04");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -102,6 +102,27 @@ MainWindow::~MainWindow()
 }
 
 
+bool MainWindow::check_canPreview()
+{
+    if (ui->label_source->pixmap() == nullptr) {
+        ui->plainTextEdit_lastCmd->setPlainText("Please open a source image to run a preview!");
+        repaint();
+        return false;
+    }
+    return true;
+}
+
+bool MainWindow::check_canSave()
+{
+    if (ui->label_preview->pixmap() == nullptr) {
+        ui->plainTextEdit_lastCmd->setPlainText("Please open a source image and run a preview first!");
+        repaint();
+        return false;
+    }
+    return true;
+}
+
+
 void MainWindow::updateDisplayModes() {
 
     QList<int> disabledList = QList<int>();
@@ -166,6 +187,7 @@ void MainWindow::updateDisplayModes() {
     }
 }
 
+
 void MainWindow::on_pushButton_sourceFilename_clicked()
 {
     QString filename = QFileDialog::getOpenFileName();
@@ -180,6 +202,7 @@ void MainWindow::on_pushButton_sourceFilename_clicked()
         updateNeeded=1;
     }
 }
+
 
 void MainWindow::updateInputSize()
 {
@@ -228,6 +251,7 @@ void MainWindow::updateInputSize()
     ui->label_scaleFactor->setText(scaleString);
 }
 
+
 void MainWindow::livePreview()
 {
     if (ui->checkBox_livePreview->isChecked()) {
@@ -237,15 +261,10 @@ void MainWindow::livePreview()
 
 
 // This is the actual preview generation/main logic function
-
 void MainWindow::on_pushButton_preview_clicked()
 {
-    if (ui->label_source->pixmap() == nullptr) {
-        QString noImage = "Please open a source image first";
-        ui->plainTextEdit_lastCmd->setPlainText(noImage);
-        repaint();
-        return;
-    }
+    if (!check_canPreview()) return;
+
     // GET SCALE FACTOR
     updateInputSize();
 
@@ -345,6 +364,7 @@ void MainWindow::previewTimerTimeout()
     }
 }
 
+
 void MainWindow::on_horizontalSlider_crossHatch_valueChanged(int value)
 {
     if (value==0){
@@ -365,6 +385,7 @@ void MainWindow::on_horizontalSlider_colorBleed_valueChanged(int value)
     }
     updateNeeded = 1;
 }
+
 
 void MainWindow::on_comboBox_outputFormat_currentIndexChanged(int /*unused*/)
 {
@@ -407,12 +428,11 @@ void MainWindow::on_actionWhat_is_this_triggered()
     msgBox.exec();
 }
 
+
 void MainWindow::on_pushButton_saveImage_clicked()
 {
-    if (ui->label_preview->pixmap() == nullptr) {
-        ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
-        return;
-    }
+    if (!check_canSave()) return;
+
     QString a2filename;
     QString suffix;
     QString filters = QString("All Images (*.A2FC *.BIN *.SLO *.DLO);;HGR (*.BIN);;DHGR (*.A2FC);;LR (*.SLO);;DLR (*.DLO);;All files (*.*)");
@@ -457,12 +477,7 @@ void MainWindow::on_pushButton_saveImage_clicked()
 // I consider this small feature a present to the community.
 void MainWindow::on_pushButton_saveToProdos_clicked()
 {
-    // @Todo: This isn't appropriate when someone changes res/source and has
-    // a previous preview pixmap, it will think we are all OK.
-    if (ui->label_preview->pixmap() == nullptr) {
-        ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
-        return;
-    }
+    if (!check_canSave()) return;
 
     QString cadiusPath = "/Users/dbrock/appleiigs/tools/Cadius";
     cadiusPath = QString("%1/Cadius").arg(QCoreApplication::applicationDirPath());
@@ -653,10 +668,6 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     }
 
 
-
-
-
-
     if (ok && !prodosFileName.isEmpty()) {
         // COPY IT ...  OVER EXISTING NAME?
         QString saveFile = QString("%1/%2").arg(tmpDirPath,prodosFileName);
@@ -748,4 +759,29 @@ void MainWindow::on_comboBox_dithering_currentIndexChanged(int /*unused*/)
 void MainWindow::on_comboBox_previewPalette_currentIndexChanged(int /*unused*/)
 {
     updateNeeded = 1;
+}
+
+void MainWindow::on_pushButton_savePreview_clicked()
+{
+    if (!check_canSave()) return;
+    QString a2filename;
+
+    QString filters = QString("All Images (*.BMP *.PNG);;Bitmap (*.BMP);;PNG (*.PNG);;All files (*.*)");
+    QString defaultFilter = "PNG (*.PNG)";
+    QString suffix = ".PNG";
+
+    // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
+    QString saveFile = QFileDialog::getSaveFileName(nullptr, "Save file", QDir::currentPath(), filters, &defaultFilter);
+    if (QFile::exists(saveFile)) {
+        QFile::remove(saveFile);
+    }
+
+    // TRY TO SET CORRECT TYPE FOR SAVE, DEFAULT TO PNG
+    QFileInfo fi(saveFile);
+    QString ext = fi.completeSuffix().toUpper();
+    if (ext == "BMP") {
+        ui->label_preview->pixmap()->save(saveFile,"BMP", 0);
+    } else {
+        ui->label_preview->pixmap()->save(saveFile,"PNG", 0);
+    }
 }
