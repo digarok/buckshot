@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
@@ -28,7 +28,7 @@ private slots:
 
     void on_horizontalSlider_crossHatch_valueChanged(int value);
     void on_horizontalSlider_colorBleed_valueChanged(int value);
-    void on_comboBox_outputFormat_currentIndexChanged(int index);
+    void on_comboBox_outputFormat_currentIndexChanged(int);
     void on_comboBox_inputResolution_currentIndexChanged(int index);
 
     void on_checkBox_livePreview_stateChanged(int arg1);
@@ -40,8 +40,9 @@ private slots:
     void on_pushButton_saveImage_clicked();
     void on_pushButton_saveToProdos_clicked();
 
-
     void on_comboBox_dithering_currentIndexChanged(int index);
+    void on_comboBox_previewPalette_currentIndexChanged(int index);
+
 
 private:
     Ui::MainWindow *ui;
