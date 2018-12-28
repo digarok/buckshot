@@ -64,6 +64,28 @@ MainWindow::MainWindow(QWidget *parent) :
                         << "9- Buckels";
     ui->comboBox_dithering->addItems(ditheringAlgorithms);
 
+
+    // POPULATE PALETTE COMBOBOX
+    QStringList previewPalettes;
+    previewPalettes << "Kegs32 RGB"
+            << "CiderPress RGB"
+            << "Old AppleWin NTSC"
+            << "New AppleWin NTSC"
+            << "Wikipedia NTSC"
+            << "tohgr NTSC DHGR"
+            << " (N/A) -- Imported"
+            << "Legacy Canvas"
+            << "Legacy Win16"
+            << "Legacy Win32"
+            << "Legacy VGA BIOS"
+            << "Legacy VGA PCX"
+            << "Super Convert RGB"
+            << "Jace NTSC"
+            << "Cybernesto-Munafo NTSC"
+            << "Pseudo Palette"
+            << "tohgr NTSC HGR";
+    ui->comboBox_previewPalette->addItems(previewPalettes);
+
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
     updateDisplayModes();
 
@@ -73,19 +95,27 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(previewTimer, SIGNAL(timeout()), this, SLOT(previewTimerTimeout()));
 }
 
-//---- display modes
-// 0  "40 x 48   - Full Scale LGR (LGR ONLY)"
-// 1  "80 x 48   - Full Scale DLGR (DLGR ONLY)"
-// 2  "140 x 192 - Full Scale (HGR & DHGR)"
-// 3  "280 x 192 - Double Width Scale (HGR & DHGR)"
-// 4  "320 x 200 - Classic Size"
-// 5  "560 x 384 - Quadruple Width, Double Height Scale"
-// 6  "640 x 400 - Classic Size"
-// 7  "640 x 480 - Classic Size";
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+
+
 void MainWindow::updateDisplayModes() {
 
     QList<int> disabledList = QList<int>();
 
+    //---- display modes
+    // 0  "40 x 48   - Full Scale LGR (LGR ONLY)"
+    // 1  "80 x 48   - Full Scale DLGR (DLGR ONLY)"
+    // 2  "140 x 192 - Full Scale (HGR & DHGR)"
+    // 3  "280 x 192 - Double Width Scale (HGR & DHGR)"
+    // 4  "320 x 200 - Classic Size"
+    // 5  "560 x 384 - Quadruple Width, Double Height Scale"
+    // 6  "640 x 400 - Classic Size"
+    // 7  "640 x 480 - Classic Size";
+    
     // Enable all first
     QList<int> enabledList = QList<int>() << 0 << 1 << 2 << 3 << 4 << 5 << 6 << 7;
     QListIterator<int> e(enabledList);
@@ -136,17 +166,10 @@ void MainWindow::updateDisplayModes() {
     }
 }
 
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
-
 void MainWindow::on_pushButton_sourceFilename_clicked()
 {
     QString filename = QFileDialog::getOpenFileName();
-    if (filename != NULL) {
+    if (filename != nullptr) {
         ui->lineEdit_sourceFilename->setText(filename);
         QPixmap mypix(filename);
         ui->label_source->setPixmap(mypix);
@@ -199,8 +222,8 @@ void MainWindow::updateInputSize()
     }
 
     QSize sourceSize = ui->label_source->pixmap()->size();
-    double sx = (double)inputWidth / sourceSize.width();
-    double sy = (double)inputHeight / sourceSize.height();
+    double sx = static_cast<double>(inputWidth) / sourceSize.width();
+    double sy = static_cast<double>(inputHeight) / sourceSize.height();
     QString scaleString = QString("%1 x %2").arg(sx).arg(sy);
     ui->label_scaleFactor->setText(scaleString);
 }
@@ -214,10 +237,13 @@ void MainWindow::livePreview()
 
 
 // This is the actual preview generation/main logic function
+
 void MainWindow::on_pushButton_preview_clicked()
 {
-    if (ui->label_source->pixmap() == NULL) {
-        ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image first!");
+    if (ui->label_source->pixmap() == nullptr) {
+        QString noImage = "Please open a source image first";
+        ui->plainTextEdit_lastCmd->setPlainText(noImage);
+        repaint();
         return;
     }
     // GET SCALE FACTOR
@@ -272,13 +298,20 @@ void MainWindow::on_pushButton_preview_clicked()
         args << ditherArg;
     }
 
-    args <<  "V";   // MUST HAVE!  V FLAG GENERATES OUR PREVIEW IMAGE
+    // MUST ALWAYS HAVE A "V" FLAG TO GENERATE OUR PREVIEW IMAGE
+    if (ui->comboBox_previewPalette->currentIndex() > -1) {
+        QString ppalArg = QString("V%1").arg(ui->comboBox_previewPalette->currentIndex());
+        args << ppalArg;
+    }
+
+    args << ui->lineEdit_addArgs->text();
 
     // RUN THE CONVERTER SCRIPT
     process.start(converterPath,args);
     process.waitForFinished();  // BLOCKS!!!
 
     QString commandString = QString("%1 %2").arg(converterPath, args.join(" "));
+    qDebug() << commandString;
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
     // ALL DONE SO TRY TO LOAD PREVIEW
@@ -288,15 +321,19 @@ void MainWindow::on_pushButton_preview_clicked()
         int scale = 3;
         realScale = scale;
         previewPix = previewPix.scaled(80*scale, 48*scale);
+        qDebug() << "W80";
     }
     if (previewPix.width() == 560) {
         float scale = 0.5f;
         realScale = scale;
-        previewPix = previewPix.scaled((int)(560*scale),(int)(384*scale), Qt::KeepAspectRatio,Qt::SmoothTransformation);
+        previewPix = previewPix.scaled(qRound(560*scale),qRound(384*scale), Qt::KeepAspectRatio,Qt::SmoothTransformation);
+        qDebug() << "W560";
     }
     ui->label_preview->setPixmap(previewPix);
-    ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(realScale));
+    ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(qRound(realScale)));
+    repaint();
 }
+
 
 // When this timer is running, it checks to see if a
 // preview update has been requested, and handles it if so.
@@ -329,14 +366,14 @@ void MainWindow::on_horizontalSlider_colorBleed_valueChanged(int value)
     updateNeeded = 1;
 }
 
-void MainWindow::on_comboBox_outputFormat_currentIndexChanged(int index)
+void MainWindow::on_comboBox_outputFormat_currentIndexChanged(int /*unused*/)
 {
     updateNeeded = 1;
     updateDisplayModes();
 }
 
 
-void MainWindow::on_comboBox_inputResolution_currentIndexChanged(int index)
+void MainWindow::on_comboBox_inputResolution_currentIndexChanged(int /*unused*/)
 {
     updateNeeded = 1;
 }
@@ -366,13 +403,13 @@ void MainWindow::on_actionWhat_is_this_triggered()
                    "Once you are satisfied with your conversion settings, click \"Save Image File\" to save in one of the Apple ][ image formats based on the display mode.  "
                    "If you want to save that image file directly to a ProDOS volume, that is now supported via the \"Save To ProDOS\" function!\n\n"
                    "Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
-                   "(c)2016-2017 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
+                   "(c)2016-2019 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
     msgBox.exec();
 }
 
 void MainWindow::on_pushButton_saveImage_clicked()
 {
-    if (ui->label_preview->pixmap() == NULL) {
+    if (ui->label_preview->pixmap() == nullptr) {
         ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
         return;
     }
@@ -404,7 +441,7 @@ void MainWindow::on_pushButton_saveImage_clicked()
     }
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
-    QString saveFile = QFileDialog::getSaveFileName(0, "Save file", QDir::currentPath(), filters, &defaultFilter);
+    QString saveFile = QFileDialog::getSaveFileName(nullptr, "Save file", QDir::currentPath(), filters, &defaultFilter);
     if (QFile::exists(saveFile)) {
         QFile::remove(saveFile);
     }
@@ -422,7 +459,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 {
     // @Todo: This isn't appropriate when someone changes res/source and has
     // a previous preview pixmap, it will think we are all OK.
-    if (ui->label_preview->pixmap() == NULL) {
+    if (ui->label_preview->pixmap() == nullptr) {
         ui->plainTextEdit_lastCmd->document()->setPlainText("Please open a source image and run a preview first!");
         return;
     }
@@ -442,7 +479,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
-    QString prodosImageFile = QFileDialog::getSaveFileName(0, "Choose ProDOS Image to Save to", QDir::currentPath(), filters, &defaultFilter, QFileDialog::DontConfirmOverwrite);
+    QString prodosImageFile = QFileDialog::getSaveFileName(nullptr, "Choose ProDOS Image to Save to", QDir::currentPath(), filters, &defaultFilter, QFileDialog::DontConfirmOverwrite);
 
     // ALSO GENERATE PRODOS SAFE BASENAME
     QFileInfo fi(prodosImageFile);
@@ -493,7 +530,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
         // NOW CHECK AGAIN TO SEE IF OUR IMAGE FILE GOT CREATED
         if (check_file.exists() && check_file.isFile()) {
-            qDebug() << "IMAGE FILE CREATED.";
+            // qDebug() << "IMAGE FILE CREATED.";
         } else {
             ui->plainTextEdit_lastCmd->document()->setPlainText(QString("Failed creating image with command: %1").arg(commandString));
             return;
@@ -512,7 +549,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     cat_process.start(cadiusPath,cat_args);
     cat_process.waitForFinished();  // BLOCKS!!!
     QString cat_output = QString(cat_process.readAllStandardOutput());
-    qDebug() << "CATALOG OUTPUT (cat_output)\n   " << cat_output;
+    //qDebug() << "CATALOG OUTPUT (cat_output)\n   " << cat_output;
 
     // regex scanner index
     int pos = 0;
@@ -532,7 +569,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
     while ((pos = rx.indexIn(cat_output, pos)) != -1) {
         list << rx.cap(1);
-        qDebug() << rx.cap(1);
+        //qDebug() << rx.cap(1);
         pos += rx.matchedLength();
     }
 
@@ -628,7 +665,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         // GENERATE OUR STUPID _FileInformation.txt in the same directory
         QString fileinfo_text = QString("%1=Type(%2),AuxType(%3),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)").arg(prodosFileName, filetype, auxtype);
         QString fileinfo_file = QString("%1/_FileInformation.txt").arg(tmpDirPath);
-        qDebug() << "TMP FILE: " << fileinfo_file;
+        //qDebug() << "TMP FILE: " << fileinfo_file;
         QFile file( fileinfo_file );
         if (file.open(QIODevice::ReadWrite)) {
             QTextStream stream( &file );
@@ -654,7 +691,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
                 // ../tools/Cadius DELETEFILE    <[2mg|hdv|po]_image_path>   <prodos_file_path>
                 // YES - DELETE
                 QString deleteFile = QString("%1%2").arg(prodosVolumeName,prodosFileName);
-                qDebug() << "DELETEFILE : " <<deleteFile;
+                // qDebug() << "DELETEFILE : " <<deleteFile;
                 QProcess delfile_process;
                 QStringList delfile_args;
                 delfile_args << "DELETEFILE";
@@ -682,7 +719,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
                     return;
                 }
             } else {
-                if (ui->label_preview->pixmap() == NULL) {
+                if (ui->label_preview->pixmap() == nullptr) {
                     ui->plainTextEdit_lastCmd->document()->setPlainText("Save cancelled because file exists.");
                     return;
                 }
@@ -703,7 +740,12 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     return;
 }
 
-void MainWindow::on_comboBox_dithering_currentIndexChanged(int index)
+void MainWindow::on_comboBox_dithering_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_previewPalette_currentIndexChanged(int /*unused*/)
 {
     updateNeeded = 1;
 }
