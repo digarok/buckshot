@@ -9,7 +9,7 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.04");
+const QString MainWindow::version = QString("0.05");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -93,6 +93,8 @@ MainWindow::MainWindow(QWidget *parent) :
     updateNeeded = false;
     previewTimer = new QTimer(this);
     connect(previewTimer, SIGNAL(timeout()), this, SLOT(previewTimerTimeout()));
+    // decided to enable by checking in the form and calling this.
+    on_checkBox_livePreview_stateChanged(1);
 }
 
 
@@ -292,9 +294,6 @@ void MainWindow::on_pushButton_preview_clicked()
         break;
     }
 
-    QString tempDir = "/tmp";
-
-
     QString converterPath = "/Users/dbrock/appleiigs/grlib/b2d";
     converterPath = QString("%1/b2d").arg(QCoreApplication::applicationDirPath());
 
@@ -302,6 +301,9 @@ void MainWindow::on_pushButton_preview_clicked()
     QStringList args;
     args << inputImgPath;   // "/tmp/saved.bmp"
     args << outputFormat;
+    if (outputFormat == "DL" || outputFormat == "L") {
+        args << "N";
+    }
 
     if (ui->horizontalSlider_crossHatch->value() > 0) {
         QString crossHatchArg = QString("Z%1").arg(ui->horizontalSlider_crossHatch->value());
@@ -424,7 +426,7 @@ void MainWindow::on_actionWhat_is_this_triggered()
                    "Once you are satisfied with your conversion settings, click \"Save Image File\" to save in one of the Apple ][ image formats based on the display mode.  "
                    "If you want to save that image file directly to a ProDOS volume, that is now supported via the \"Save To ProDOS\" function!\n\n"
                    "Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
-                   "(c)2016-2019 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
+                   "(c)2016-2020 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
     msgBox.exec();
 }
 

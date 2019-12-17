@@ -26,5 +26,8 @@ HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
 
-DISTFILES += \
-    ../b2d
+#@todo: integrate
+#DISTFILES += \
+#    ../b2d
+
+QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.8
