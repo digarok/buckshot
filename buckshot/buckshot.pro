@@ -31,3 +31,6 @@ FORMS    += mainwindow.ui
 #    ../b2d
 
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.8
+
+RESOURCES += \
+    assets.qrc
