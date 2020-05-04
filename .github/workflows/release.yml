@@ -1,0 +1,26 @@
+name: Release Builds
+on: push
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
+
+jobs:
+  build-and-store-artifact:
+    name: Build 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest ]
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ilammy/msvc-dev-cmd@v1
+    - name: Make GNU
+      if: matrix.os != 'windows-latest'
+      working-directory: ./buckshot
+      run: qmake ; make
+      shell: bash
+    - name: Make Windows
+      if: matrix.os == 'windows-latest'
+      working-directory: ./src
+      run: qmake ; make
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
