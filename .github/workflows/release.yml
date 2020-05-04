@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-latest ]
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
     steps:
     - uses: actions/checkout@v1
     #- uses: ilammy/msvc-dev-cmd@v1
