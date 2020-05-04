@@ -23,7 +23,7 @@ jobs:
     - name: Make Windows
       if: matrix.os == 'windows-latest'
       working-directory: ./buckshot
-      run: qmake ; nmake ; ls -al
+      run: qmake ; ls -al ; jom ; ls -al ; nmake ; ls -al
 
     - name: Package OSX Test
       if: matrix.os == 'macos-latest'
