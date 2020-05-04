@@ -12,7 +12,9 @@ jobs:
         os: [ macos-latest ]
     steps:
     - uses: actions/checkout@v1
-    - uses: ilammy/msvc-dev-cmd@v1
+    #- uses: ilammy/msvc-dev-cmd@v1
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
     - name: Make GNU
       if: matrix.os != 'windows-latest'
       working-directory: ./buckshot
@@ -22,5 +24,3 @@ jobs:
       if: matrix.os == 'windows-latest'
       working-directory: ./src
       run: qmake ; make
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v2
