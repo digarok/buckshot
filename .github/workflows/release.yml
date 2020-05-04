@@ -27,7 +27,7 @@ jobs:
         dir
         qmake
         dir
-        jom 
+        mingw32-make 
         dir
         nmake
         dir
