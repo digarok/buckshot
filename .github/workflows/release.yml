@@ -27,4 +27,4 @@ jobs:
 
     - name: Package OSX Test
       if: matrix.os == 'macos-latest'
-      run: macdeployqt 
+      run: ls ; #macdeployqt 
