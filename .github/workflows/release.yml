@@ -27,10 +27,11 @@ jobs:
         dir
         qmake
         dir
-        mingw32-make 
-        dir
+        #mingw32-make 
+        #dir
         nmake
         dir
+        dir release
 
     - name: Package OSX Test
       if: matrix.os == 'macos-latest'
