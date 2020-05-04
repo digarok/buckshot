@@ -12,15 +12,19 @@ jobs:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
     steps:
     - uses: actions/checkout@v1
-    #- uses: ilammy/msvc-dev-cmd@v1
+    - uses: ilammy/msvc-dev-cmd@v1
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
     - name: Make GNU
       if: matrix.os != 'windows-latest'
       working-directory: ./buckshot
-      run: qmake ; make
+      run: qmake ; make ; ls -al
       shell: bash
     - name: Make Windows
       if: matrix.os == 'windows-latest'
       working-directory: ./buckshot
-      run: qmake ; make
+      run: qmake ; make ; ls -al
+
+    - name: Package OSX Test
+      if: matrix.os == 'macos-latest'
+      run: macdeployqt 
