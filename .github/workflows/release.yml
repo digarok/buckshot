@@ -40,9 +40,9 @@ jobs:
         echo "----1"
         ls -al
         echo "----2"
-        ls -al
+        ls -al ..
         echo "----3"
-        macdeployqt buckshot.app
-        ls -al buckshot.app
+        ls -al buckshot
+        macdeployqt buckshot/buckshot.app
 
       
