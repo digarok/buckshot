@@ -9,7 +9,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ windows-latest, ubuntu-latest, macos-latest ]
+        #os: [ windows-latest, ubuntu-latest, macos-latest ]
+        os: [ ubuntu-latest ]
     steps:
     - uses: actions/checkout@v1
     - uses: ilammy/msvc-dev-cmd@v1
@@ -35,4 +36,13 @@ jobs:
 
     - name: Package OSX Test
       if: matrix.os == 'macos-latest'
-      run: ls ; #macdeployqt 
+      run: |
+        echo "----1"
+        ls -al
+        echo "----2"
+        ls -al
+        echo "----3"
+        macdeployqt buckshot.app
+        ls -al buckshot.app
+
+      
