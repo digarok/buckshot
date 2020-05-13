@@ -1,11 +1,11 @@
 name: Release Builds
 on: push
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build-and-store-artifact:
-    name: Build 
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -28,7 +28,7 @@ jobs:
         dir
         qmake
         dir
-        #mingw32-make 
+        #mingw32-make
         #dir
         nmake
         dir
@@ -37,12 +37,34 @@ jobs:
     - name: Package OSX Test
       if: matrix.os == 'macos-latest'
       run: |
-        echo "----1"
-        ls -al
-        echo "----2"
-        ls -al ..
-        echo "----3"
-        ls -al buckshot
-        macdeployqt buckshot/buckshot.app
+        ./package_mac.sh
+        # echo "----1"
+        # ls -al
+        # echo "----2"
+        # ls -al ..
+        # echo "----3"
+        # ls -al buckshot
+        # macdeployqt buckshot/buckshot.app
 
-      
+   # EVERYTHING BELOW IS ONLY WHEN VERSION TAGS PUSHED (i.e. tag like "v0.1")
+    - name: Create Release
+      id: create_release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+
+    - name: Upload Mac Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./buckshot.dmg
+        asset_name: buckshot.dmg
+        asset_content_type: application/octet-stream

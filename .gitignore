@@ -1,4 +1,5 @@
 .DS_Store
+Makefile
 
 build-buckshot-Desktop*
 *.o
