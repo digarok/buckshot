@@ -9,8 +9,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [ windows-latest, ubuntu-latest, macos-latest ]
-        os: [ macos-latest ]
+        #os: [ windows-latest, ubuntu-16.04, macos-latest ]
+        os: [ ubuntu-16.04 ]
     steps:
     - uses: actions/checkout@v1
     - uses: ilammy/msvc-dev-cmd@v1
@@ -34,14 +34,28 @@ jobs:
         dir
         dir release
 
-    - name: Package OSX Test
+    - name: Package Linux Test
+      if: matrix.os == 'ubuntu-16.04' 
+      run: |
+        echo "== pwd"
+        pwd
+        echo "== ls -al"
+        ls -al
+        echo "== ls -al buckshot"
+        ls -al buckshot
+        echo " ++  GO TIME ++"
+        ./package_linux.sh
+        ls -al buckshot-package-ubuntu
+        
+   # EVERYTHING BELOW IS ONLY WHEN VERSION TAGS PUSHED (i.e. tag like "v0.1")
+    # Good
+    - name: Package OSX
       if: matrix.os == 'macos-latest'
       run: |
         ./package_mac.sh
         pip3 install dmgbuild
         dmgbuild -s dmg-settings.json "buckshot" buckshot.dmg
-        
-   # EVERYTHING BELOW IS ONLY WHEN VERSION TAGS PUSHED (i.e. tag like "v0.1")
+
     - name: Create Release
       id: create_release
       if: startsWith(github.ref, 'refs/tags/v')
@@ -52,6 +66,7 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
 
+
     - name: Upload Mac Release
       if: startsWith(github.ref, 'refs/tags/v') && matrix.os == 'macos-latest'
       uses: actions/upload-release-asset@v1.0.1
@@ -61,4 +76,15 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./buckshot.dmg
         asset_name: buckshot.dmg
+        asset_content_type: application/octet-stream
+
+    - name: Upload Ubuntu Latest Release 
+      if: startsWith(github.ref, 'refs/tags/v') && matrix.os == 'ubuntu-16.04'
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./buckshot-linux.zip
+        asset_name: buckshot-linux.zip
         asset_content_type: application/octet-stream

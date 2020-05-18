@@ -11,6 +11,8 @@ ID=${0##*/}
 
 echo "${ID}: RUN macdeployqt"
 macdeployqt $APPBUILDDIR
+
+echo "${ID}: COPY APPBUILDDIR -> PACKAGEDIR"
 cp -r $APPBUILDDIR $PACKAGEDIR
 
 echo "${ID}: COPY EXTRA FILES"
@@ -22,8 +24,8 @@ cp README.md $PACKAGEDIR/README.txt
 cp LICENSE.txt $PACKAGEDIR
 
 echo "${ID}: DOWNLOAD UTILITY BINARIES"
-curl -L -o cadius.zip https://github.com/digarok/cadius/releases/download/0.0.0/cadius-macos-latest-0.0.0.zip
-curl -L -o b2d.zip https://github.com/digarok/b2d/releases/download/v1.3/b2d-macos-latest-v1.3.zip
+curl -s -L -o cadius.zip https://github.com/digarok/cadius/releases/download/0.0.0/cadius-macos-latest-0.0.0.zip
+curl -s -L -o b2d.zip https://github.com/digarok/b2d/releases/download/v1.3/b2d-macos-latest-v1.3.zip
 unzip -o cadius.zip -d cadius
 unzip -o b2d.zip -d b2d
 
