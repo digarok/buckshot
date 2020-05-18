@@ -1,0 +1,15 @@
+{
+    "title": "Buckshot",
+    "background": "assets/buckshot_dmg_bg_600x500.png",
+    "format": "UDZO",
+    "compression-level": 9,
+    "icon": "assets/icons.icns",
+    "window": { "position": { "x": 200, "y": 120 },
+                "size": { "width": 600, "height": 500 } },
+    "contents": [
+        { "x": 410, "y": 130, "type": "link", "path": "/Applications" },
+        { "x": 184, "y": 130, "type": "file", "path": "buckshot-package-osx/buckshot.app" },
+        { "x": 184, "y": 330, "type": "file", "path": "buckshot-package-osx/README.txt" },
+        { "x": 410, "y": 330, "type": "file", "path": "buckshot-package-osx/LICENSE.txt" }
+    ]
+}

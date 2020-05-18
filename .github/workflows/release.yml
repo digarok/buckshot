@@ -38,14 +38,9 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         ./package_mac.sh
-        # echo "----1"
-        # ls -al
-        # echo "----2"
-        # ls -al ..
-        # echo "----3"
-        # ls -al buckshot
-        # macdeployqt buckshot/buckshot.app
-
+        pip3 install dmgbuild
+        dmgbuild -s dmg-settings.json "buckshot" buckshot.dmg
+        
    # EVERYTHING BELOW IS ONLY WHEN VERSION TAGS PUSHED (i.e. tag like "v0.1")
     - name: Create Release
       id: create_release
