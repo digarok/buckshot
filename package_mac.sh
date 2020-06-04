@@ -12,6 +12,9 @@ ID=${0##*/}
 echo "${ID}: RUN macdeployqt"
 macdeployqt $APPBUILDDIR
 
+echo "${ID}: MKDIR PACKAGEDIR"
+mkdir -p $PACKAGEDIR
+
 echo "${ID}: COPY APPBUILDDIR -> PACKAGEDIR"
 cp -r $APPBUILDDIR $PACKAGEDIR
 

@@ -6,4 +6,4 @@ Comment=Convert modern image formats to Apple II formats
 Terminal=false
 Categories=Utility;
 Exec=AppRun %F
-Icon=buckshot
+Icon=buckshot.png
