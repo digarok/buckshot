@@ -481,7 +481,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 {
     if (!check_canSave()) return;
 
-    QString cadiusPath = "/Users/dbrock/appleiigs/cadius/cadius"; # Dev mode 
+    QString cadiusPath = "/Users/dbrock/appleiigs/cadius/cadius"; // Dev mode 
     cadiusPath = QString("%1/cadius").arg(QCoreApplication::applicationDirPath());
 
 
