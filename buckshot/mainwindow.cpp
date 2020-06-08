@@ -481,11 +481,11 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 {
     if (!check_canSave()) return;
 
-    QString cadiusPath = "/Users/dbrock/appleiigs/tools/Cadius";
-    cadiusPath = QString("%1/Cadius").arg(QCoreApplication::applicationDirPath());
+    QString cadiusPath = "/Users/dbrock/appleiigs/cadius/cadius"; # Dev mode 
+    cadiusPath = QString("%1/cadius").arg(QCoreApplication::applicationDirPath());
 
 
-    // KSYNTHED=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
+    // MYPICBIN=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
     QString filetype = "06";
     QString auxtype = "2000";
 
