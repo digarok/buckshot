@@ -520,6 +520,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         msgBox.addButton(tr("Cancel"), QMessageBox::NoRole);
         QAbstractButton* pButton140 = msgBox.addButton(tr("140KB"), QMessageBox::ApplyRole);
         QAbstractButton* pButton800 = msgBox.addButton(tr("800KB"), QMessageBox::ApplyRole);
+        QAbstractButton* pButton32768 = msgBox.addButton(tr("32MB"), QMessageBox::ApplyRole);
         msgBox.setDefaultButton(QMessageBox::Yes);
 
         msgBox.exec();
@@ -528,6 +529,8 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
             // set above, nothing to do
         } else if (msgBox.clickedButton()==pButton800) {
             imageSize = "800KB";
+        } else if (msgBox.clickedButton()==pButton32768) {
+            imageSize = "32MB";
         } else {
             return; // cancelled
         }
