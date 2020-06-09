@@ -90,22 +90,20 @@ jobs:
       if: matrix.os == 'windows-latest'
       working-directory: ./buckshot
       run: |
-        mkdir app
-        cp release\buckshot.exe app
-        windeployqt app
-        cp README.md app
+        mkdir buckshot
+        cp release\buckshot.exe buckshot
+        windeployqt buckshot
+        cp ../README.md buckshot
+        cp ../LICENSE.txt buckshot
         $url = "https://github.com/digarok/b2d/releases/download/v1.4/b2d-windows-latest-v1.4.zip"
         Invoke-WebRequest -Uri $url -OutFile b2d.zip
         7z.exe x b2d.zip
-        dir
-        cp b2d.exe app
+        cp b2d.exe buckshot
         $url = "https://github.com/digarok/cadius/releases/download/0.0.0/cadius-windows-latest-0.0.0.zip"
         Invoke-WebRequest -Uri $url -OutFile cadius.zip
         7z.exe x cadius.zip
-        dir
-        cp build/Src/Debug/Cadius.exe app
-        
-        7z.exe a buckshot.zip app\*
+        cp build/Src/Debug/Cadius.exe buckshot
+        7z.exe a buckshot.zip buckshot\*
         mv buckshot.zip ..
 
 
