@@ -24,6 +24,10 @@ This project is written in C++ using the Qt framework.  It calls out to two exte
 
 You can build and run the project without it, but it won't be able to generate previews or save to ProDOS volumes without those 3rd-party binaries.  The authors of those projects are not involved with this project, but have graciously encouraged my integration attempts with this software.
 
+sudo apt-get update
+sudo apt-get install build-essential
+sudo apt-get install qt5
+
 You will need to copy the binaries of those two programs for your platform to the build directory you are running.
 
 Example for Mac OSX "Release" build:

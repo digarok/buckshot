@@ -29,7 +29,7 @@ cp README.md $DEXTRAS/README.txt
 cp LICENSE.txt $DEXTRAS
 
 # COPY BINARIES FROM EXTERNAL PROJECTS 
-cp ../b2d $DDIR/Contents/MacOS
-cp ../tools/Cadius $DDIR/Contents/MacOS
+cp ../buckshot-bins/mac/b2d $DDIR/Contents/MacOS
+cp ../buckshot-bins/mac/cadius $DDIR/Contents/MacOS
 
 # packaging now in DMG script

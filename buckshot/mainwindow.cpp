@@ -9,7 +9,7 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.04");
+const QString MainWindow::version = QString("0.05");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -93,6 +93,8 @@ MainWindow::MainWindow(QWidget *parent) :
     updateNeeded = false;
     previewTimer = new QTimer(this);
     connect(previewTimer, SIGNAL(timeout()), this, SLOT(previewTimerTimeout()));
+    // decided to enable by checking in the form and calling this.
+    on_checkBox_livePreview_stateChanged(1);
 }
 
 
@@ -292,9 +294,6 @@ void MainWindow::on_pushButton_preview_clicked()
         break;
     }
 
-    QString tempDir = "/tmp";
-
-
     QString converterPath = "/Users/dbrock/appleiigs/grlib/b2d";
     converterPath = QString("%1/b2d").arg(QCoreApplication::applicationDirPath());
 
@@ -302,6 +301,9 @@ void MainWindow::on_pushButton_preview_clicked()
     QStringList args;
     args << inputImgPath;   // "/tmp/saved.bmp"
     args << outputFormat;
+    if (outputFormat == "DL" || outputFormat == "L") {
+        args << "N";
+    }
 
     if (ui->horizontalSlider_crossHatch->value() > 0) {
         QString crossHatchArg = QString("Z%1").arg(ui->horizontalSlider_crossHatch->value());
@@ -330,7 +332,7 @@ void MainWindow::on_pushButton_preview_clicked()
     process.waitForFinished();  // BLOCKS!!!
 
     QString commandString = QString("%1 %2").arg(converterPath, args.join(" "));
-    qDebug() << commandString;
+    //qDebug() << commandString;
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
     // ALL DONE SO TRY TO LOAD PREVIEW
@@ -340,13 +342,13 @@ void MainWindow::on_pushButton_preview_clicked()
         int scale = 3;
         realScale = scale;
         previewPix = previewPix.scaled(80*scale, 48*scale);
-        qDebug() << "W80";
+        //qDebug() << "W80";
     }
     if (previewPix.width() == 560) {
         float scale = 0.5f;
         realScale = scale;
         previewPix = previewPix.scaled(qRound(560*scale),qRound(384*scale), Qt::KeepAspectRatio,Qt::SmoothTransformation);
-        qDebug() << "W560";
+        //qDebug() << "W560";
     }
     ui->label_preview->setPixmap(previewPix);
     ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(qRound(realScale)));
@@ -424,7 +426,7 @@ void MainWindow::on_actionWhat_is_this_triggered()
                    "Once you are satisfied with your conversion settings, click \"Save Image File\" to save in one of the Apple ][ image formats based on the display mode.  "
                    "If you want to save that image file directly to a ProDOS volume, that is now supported via the \"Save To ProDOS\" function!\n\n"
                    "Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
-                   "(c)2016-2019 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
+                   "(c)2016-2020 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels and CADIUS is by Brutal Deluxe.");
     msgBox.exec();
 }
 
@@ -479,11 +481,11 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 {
     if (!check_canSave()) return;
 
-    QString cadiusPath = "/Users/dbrock/appleiigs/tools/Cadius";
-    cadiusPath = QString("%1/Cadius").arg(QCoreApplication::applicationDirPath());
+    QString cadiusPath = "/Users/dbrock/appleiigs/cadius/cadius"; // Dev mode 
+    cadiusPath = QString("%1/cadius").arg(QCoreApplication::applicationDirPath());
 
 
-    // KSYNTHED=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
+    // MYPICBIN=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
     QString filetype = "06";
     QString auxtype = "2000";
 
@@ -518,6 +520,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         msgBox.addButton(tr("Cancel"), QMessageBox::NoRole);
         QAbstractButton* pButton140 = msgBox.addButton(tr("140KB"), QMessageBox::ApplyRole);
         QAbstractButton* pButton800 = msgBox.addButton(tr("800KB"), QMessageBox::ApplyRole);
+        QAbstractButton* pButton32768 = msgBox.addButton(tr("32MB"), QMessageBox::ApplyRole);
         msgBox.setDefaultButton(QMessageBox::Yes);
 
         msgBox.exec();
@@ -526,6 +529,8 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
             // set above, nothing to do
         } else if (msgBox.clickedButton()==pButton800) {
             imageSize = "800KB";
+        } else if (msgBox.clickedButton()==pButton32768) {
+            imageSize = "32MB";
         } else {
             return; // cancelled
         }
