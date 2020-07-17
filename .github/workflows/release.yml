@@ -45,7 +45,7 @@ jobs:
       if: matrix.os != 'windows-latest'
       working-directory: ./buckshot
       run: |
-        qmake
+        qmake -config release
         make
 
     # - name: Mac debug
@@ -69,7 +69,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       working-directory: ./buckshot
       run: |
-        qmake
+        qmake -config release
         nmake
        
         
