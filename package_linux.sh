@@ -16,6 +16,7 @@ cp README.md $PACKAGEDIR/README.txt
 cp LICENSE.txt $PACKAGEDIR
 cp assets/buckshot.desktop $PACKAGEDIR
 cp assets/icon256.png $PACKAGEDIR/buckshot.png
+cp assets/examples/* $PACKAGEDIR/
 
 
 echo "${ID}: DOWNLOAD UTILITY BINARIES"

@@ -25,6 +25,7 @@ cp $ASSETDIR/Info.plist $CONTENTDIR
 cp $ASSETDIR/icons.icns $CONTENTDIR/Resources
 cp README.md $PACKAGEDIR/README.txt
 cp LICENSE.txt $PACKAGEDIR
+cp $ASSETDIR/examples/* $PACKAGEDIR
 
 echo "${ID}: DOWNLOAD UTILITY BINARIES"
 curl -s -L -o cadius.zip https://github.com/digarok/cadius/releases/download/0.0.0/cadius-macos-latest-0.0.0.zip
