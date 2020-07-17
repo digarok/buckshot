@@ -34,3 +34,6 @@ QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.8
 
 RESOURCES += \
     assets.qrc
+
+# For issues of launching from Ubuntu desktops
+QMAKE_LFLAGS += -no-pie
