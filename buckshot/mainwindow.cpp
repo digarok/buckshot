@@ -332,7 +332,7 @@ void MainWindow::on_pushButton_preview_clicked()
     process.waitForFinished();  // BLOCKS!!!
 
     QString commandString = QString("%1 %2").arg(converterPath, args.join(" "));
-    qDebug() << commandString;
+    //qDebug() << commandString;
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
     // ALL DONE SO TRY TO LOAD PREVIEW
@@ -342,13 +342,13 @@ void MainWindow::on_pushButton_preview_clicked()
         int scale = 3;
         realScale = scale;
         previewPix = previewPix.scaled(80*scale, 48*scale);
-        qDebug() << "W80";
+        //qDebug() << "W80";
     }
     if (previewPix.width() == 560) {
         float scale = 0.5f;
         realScale = scale;
         previewPix = previewPix.scaled(qRound(560*scale),qRound(384*scale), Qt::KeepAspectRatio,Qt::SmoothTransformation);
-        qDebug() << "W560";
+        //qDebug() << "W560";
     }
     ui->label_preview->setPixmap(previewPix);
     ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(qRound(realScale)));
