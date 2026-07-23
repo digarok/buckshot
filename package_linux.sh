@@ -30,11 +30,11 @@ cp b2d/b2d $PACKAGEDIR
 cp cadius/cadius $PACKAGEDIR
 
 echo "${ID}: INSTALL EXTRA DEV PACKAGES"
-sudo apt-get install -y libxkbcommon-x11-0
+sudo apt-get install -y libxkbcommon-x11-0 libxcb-cursor0
 
 echo "${ID}: RUN DEPLOY BUILD"
-wget -nv https://github.com/probonopd/linuxdeployqt/releases/download/5/linuxdeployqt-5-x86_64.AppImage
-chmod +x linuxdeployqt-5-x86_64.AppImage
-./linuxdeployqt-5-x86_64.AppImage $PACKAGEDIR/buckshot -appimage -bundle-non-qt-libs -verbose=2
+wget -nv https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+chmod +x linuxdeployqt-continuous-x86_64.AppImage
+./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract-and-run $PACKAGEDIR/buckshot -appimage -bundle-non-qt-libs -verbose=2 -unsupported-allow-new-glibc
 
 zip -r buckshot-linux.zip $PACKAGEDIR

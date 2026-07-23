@@ -8,6 +8,7 @@
 #include "qinputdialog.h"
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
+#include <QRegularExpression>
 const QString MainWindow::programName = QString("buckshot");
 const QString MainWindow::version = QString("0.05");
 const QString MainWindow::imageName = QString("saved");
@@ -106,7 +107,7 @@ MainWindow::~MainWindow()
 
 bool MainWindow::check_canPreview()
 {
-    if (ui->label_source->pixmap() == nullptr) {
+    if (ui->label_source->pixmap().isNull()) {
         ui->plainTextEdit_lastCmd->setPlainText("Please open a source image to run a preview!");
         repaint();
         return false;
@@ -116,7 +117,7 @@ bool MainWindow::check_canPreview()
 
 bool MainWindow::check_canSave()
 {
-    if (ui->label_preview->pixmap() == nullptr) {
+    if (ui->label_preview->pixmap().isNull()) {
         ui->plainTextEdit_lastCmd->setPlainText("Please open a source image and run a preview first!");
         repaint();
         return false;
@@ -193,12 +194,12 @@ void MainWindow::updateDisplayModes() {
 void MainWindow::on_pushButton_sourceFilename_clicked()
 {
     QString filename = QFileDialog::getOpenFileName();
-    if (filename != nullptr) {
+    if (!filename.isEmpty()) {
         ui->lineEdit_sourceFilename->setText(filename);
         QPixmap mypix(filename);
         ui->label_source->setPixmap(mypix);
         ui->label_source->setScaledContents(true);
-        QSize sourceSize = ui->label_source->pixmap()->size();
+        QSize sourceSize = mypix.size();
         QString resolutionString = QString("%1 x %2").arg(sourceSize.width()).arg(sourceSize.height());
         ui->label_sourceResolution->setText(resolutionString);
         updateNeeded=1;
@@ -246,7 +247,7 @@ void MainWindow::updateInputSize()
         break;
     }
 
-    QSize sourceSize = ui->label_source->pixmap()->size();
+    QSize sourceSize = ui->label_source->pixmap().size();
     double sx = static_cast<double>(inputWidth) / sourceSize.width();
     double sy = static_cast<double>(inputHeight) / sourceSize.height();
     QString scaleString = QString("%1 x %2").arg(sx).arg(sy);
@@ -271,7 +272,7 @@ void MainWindow::on_pushButton_preview_clicked()
     updateInputSize();
 
     // NOW GENERATE SCALED QPIXMAP TO SAVE
-    QPixmap scaledPixmap = ui->label_source->pixmap()->scaled(inputWidth,inputHeight);
+    QPixmap scaledPixmap = ui->label_source->pixmap().scaled(inputWidth,inputHeight);
     scaledPixmap.save(inputImgPath,"BMP", 0);
 
     // NOW FIND OUR OUTPUT FORMAT
@@ -571,26 +572,22 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     QString cat_output = QString(cat_process.readAllStandardOutput());
     //qDebug() << "CATALOG OUTPUT (cat_output)\n   " << cat_output;
 
-    // regex scanner index
-    int pos = 0;
     QStringList list;
 
     // MUST MATCH FOR NEWLINES (VS USING ^ or &)
-    QRegExp vol_rx("\n(/.{1,15}/)\r?\n");
+    QRegularExpression vol_rx("\n(/.{1,15}/)\r?\n");
     // OVERWRITE PRODOS VOLUME NAME IF WE KNOW BETTER
-    while ((pos = vol_rx.indexIn(cat_output, pos)) != -1) {
-        prodosVolumeName = vol_rx.cap(1);
-        break;
+    QRegularExpressionMatch vol_match = vol_rx.match(cat_output);
+    if (vol_match.hasMatch()) {
+        prodosVolumeName = vol_match.captured(1);
     }
 
     // NOW MATCH FOR SOME EXTRA DETAILS JUST BECAUSE WE CAN
-    QRegExp rx("(Block|Free|File|Directory) : (\\d+)");
-    pos = 0;
+    QRegularExpression rx("(Block|Free|File|Directory) : (\\d+)");
+    QRegularExpressionMatchIterator rx_it = rx.globalMatch(cat_output);
 
-    while ((pos = rx.indexIn(cat_output, pos)) != -1) {
-        list << rx.cap(1);
-        //qDebug() << rx.cap(1);
-        pos += rx.matchedLength();
+    while (rx_it.hasNext()) {
+        list << rx_it.next().captured(1);
     }
 
     int diskBlocks, diskFree, diskFiles, diskDirs = 0;
@@ -685,7 +682,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         QFile file( fileinfo_file );
         if (file.open(QIODevice::ReadWrite)) {
             QTextStream stream( &file );
-            stream << fileinfo_text << endl;
+            stream << fileinfo_text << Qt::endl;
         }
 
         // NOW ADD / SAVE OUR FILE
@@ -735,7 +732,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
                     return;
                 }
             } else {
-                if (ui->label_preview->pixmap() == nullptr) {
+                if (ui->label_preview->pixmap().isNull()) {
                     ui->plainTextEdit_lastCmd->document()->setPlainText("Save cancelled because file exists.");
                     return;
                 }
@@ -785,8 +782,8 @@ void MainWindow::on_pushButton_savePreview_clicked()
     QFileInfo fi(saveFile);
     QString ext = fi.completeSuffix().toUpper();
     if (ext == "BMP") {
-        ui->label_preview->pixmap()->save(saveFile,"BMP", 0);
+        ui->label_preview->pixmap().save(saveFile,"BMP", 0);
     } else {
-        ui->label_preview->pixmap()->save(saveFile,"PNG", 0);
+        ui->label_preview->pixmap().save(saveFile,"PNG", 0);
     }
 }
