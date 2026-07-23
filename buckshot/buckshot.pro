@@ -33,3 +33,8 @@ RESOURCES += \
 
 # For issues of launching from Ubuntu desktops
 linux: QMAKE_LFLAGS += -no-pie
+
+# Qt's qyieldcpu.h calls __yield() without declaring it, which Apple Clang 17+
+# rejects (QTBUG-135402); arm_acle.h provides the declaration. Drop this once
+# Qt ships the reordered __builtin_arm_yield check.
+macx:contains(QMAKE_HOST.arch, arm64): QMAKE_CXXFLAGS += -include arm_acle.h
