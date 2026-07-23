@@ -17,7 +17,7 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
     - uses: jurplel/install-qt-action@v4
       with:
-        version: '6.8.*'
+        version: '6.11.*'
 
     - name: Install Linux build deps
       if: matrix.os == 'ubuntu-latest'
