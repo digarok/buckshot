@@ -10,7 +10,7 @@
 #include "qdialogbuttonbox.h"
 #include <QRegularExpression>
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.05");
+const QString MainWindow::version = QString("0.06.0");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // POPULATE FORMAT COMBOBOX
     QStringList outputFormats;
-    outputFormats << "LR" << "DLR" << "HGR" << "DHGR" << "MONO";
+    outputFormats << "LR" << "DLR" << "HGR" << "HGR Nearest Pixel Group" << "DHGR" << "HGR MONO" << "DHGR MONO";
     ui->comboBox_outputFormat->addItems(outputFormats);
 
     // POPULATE RESOLUTION COMBOBOX
@@ -89,6 +89,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
     updateDisplayModes();
+
+    // DEFAULT TO HGR AT 640 x 480 ON LAUNCH
+    ui->comboBox_outputFormat->setCurrentText("HGR");
+    ui->comboBox_inputResolution->setCurrentIndex(7);
 
     // live preview stuff
     updateNeeded = false;
@@ -153,29 +157,34 @@ void MainWindow::updateDisplayModes() {
     }
 
     // SET DISABLED ITEMS LIST - AND DEFAULT RESOLUTION FOR MODE
+    int defaultIndex = 2;
     if (ui->comboBox_outputFormat->currentText() == "LR") {
         disabledList << 2 << 3;
-        inputWidth = 40;
-        inputHeight = 48;
-        ui->comboBox_inputResolution->setCurrentIndex(0);
+        defaultIndex = 0;
     } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
         disabledList << 2 << 3;
-        inputWidth = 80;
-        inputHeight = 48;
-        ui->comboBox_inputResolution->setCurrentIndex(1);
-    }  else if (ui->comboBox_outputFormat->currentText() == "MONO") {
-        disabledList << 0 << 1 << 2 << 4 << 6 << 7;
-        inputWidth = 280;
-        inputHeight = 192;
-        ui->comboBox_inputResolution->setCurrentIndex(3);
+        defaultIndex = 1;
+    }  else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
+        // b2d picks HGR mono output from the 280 x 192 input size
+        disabledList << 0 << 1 << 2 << 4 << 5 << 6 << 7;
+        defaultIndex = 3;
+    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
+        // b2d picks DHGR mono output from the 560 x 384 input size
+        disabledList << 0 << 1 << 2 << 3 << 4 << 6 << 7;
+        defaultIndex = 5;
     } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
-        inputWidth = 280;
-        inputHeight = 192;
-        ui->comboBox_inputResolution->setCurrentIndex(3);
+        disabledList << 0 << 1;
+        defaultIndex = 3;
     } else {
-        inputWidth = 140;
-        inputHeight = 192;
-        ui->comboBox_inputResolution->setCurrentIndex(2);
+        // HGR & HGR Nearest Pixel Group
+        disabledList << 0 << 1;
+        defaultIndex = 2;
+    }
+
+    // KEEP THE CURRENT RESOLUTION WHEN THE NEW MODE STILL SUPPORTS IT,
+    // OTHERWISE FALL BACK TO THE MODE'S DEFAULT
+    if (disabledList.contains(ui->comboBox_inputResolution->currentIndex())) {
+        ui->comboBox_inputResolution->setCurrentIndex(defaultIndex);
     }
 
     // NOW ACTUALLY DISABLE INVALID RESOLUTIONS IN THE COMBOBOX
@@ -277,22 +286,19 @@ void MainWindow::on_pushButton_preview_clicked()
 
     // NOW FIND OUR OUTPUT FORMAT
     QString outputFormat = "H";     // HIRES
-    switch (ui->comboBox_outputFormat->currentIndex()) {
-    case 0:
+    if (ui->comboBox_outputFormat->currentText() == "LR") {
         outputFormat = "L";
-        break;
-    case 1:
+    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
         outputFormat = "DL";
-        break;
-    case 2:
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
         outputFormat = "H";
-        break;
-    case 3:
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
+        outputFormat = "hgr2";  // tohgr-style alternate HGR conversion
+    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
         outputFormat = "D";
-        break;
-    case 4:
-        outputFormat = "mono";
-        break;
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO"
+               || ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
+        outputFormat = "mono";  // input resolution selects HGR vs DHGR mono
     }
 
     QString converterPath = "/Users/dbrock/appleiigs/grlib/b2d";
@@ -438,7 +444,7 @@ void MainWindow::on_pushButton_saveImage_clicked()
 
     QString a2filename;
     QString suffix;
-    QString filters = QString("All Images (*.A2FC *.BIN *.SLO *.DLO);;HGR (*.BIN);;DHGR (*.A2FC);;LR (*.SLO);;DLR (*.DLO);;All files (*.*)");
+    QString filters = QString("All Images (*.A2FC *.A2FM *.BIN *.SLO *.DLO);;HGR (*.BIN);;DHGR (*.A2FC);;DHGR MONO (*.A2FM);;LR (*.SLO);;DLR (*.DLO);;All files (*.*)");
     QString defaultFilter;
 
     if (ui->comboBox_outputFormat->currentText() == "LR") {
@@ -453,14 +459,23 @@ void MainWindow::on_pushButton_saveImage_clicked()
         a2filename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
         suffix = ".BIN";
         defaultFilter = "HGR (*.BIN)";
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
+        // b2d names HGR output <NAME><options>.BIN; "hgr2" yields options "CA"
+        a2filename = QString("%1/%2CA.BIN").arg(tmpDirPath,imageName.toUpper());
+        suffix = ".BIN";
+        defaultFilter = "HGR (*.BIN)";
     } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
         a2filename = QString("%1/%2.A2FC").arg(tmpDirPath,imageName.toUpper());
         suffix = ".A2FC";
         defaultFilter = "DHGR (*.A2FC)";
-    } else if (ui->comboBox_outputFormat->currentText() == "MONO") {
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
         a2filename = QString("%1/%2M.BIN").arg(tmpDirPath,imageName.toUpper());
         suffix = ".BIN";
         defaultFilter = "HGR (*.BIN)";
+    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
+        a2filename = QString("%1/%2.A2FM").arg(tmpDirPath,imageName.toUpper());
+        suffix = ".A2FM";
+        defaultFilter = "DHGR MONO (*.A2FM)";
     }
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
@@ -616,12 +631,18 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
         savedFilename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1CH.BIN").arg(imageName.toUpper());
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
+        savedFilename = QString("%1/%2CA.BIN").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1CA.BIN").arg(imageName.toUpper());
     } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
         savedFilename = QString("%1/%2.A2FC").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1.A2FC").arg(imageName.toUpper());
-    } else if (ui->comboBox_outputFormat->currentText() == "MONO") {
+    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
         savedFilename = QString("%1/%2M.BIN").arg(tmpDirPath,imageName.toUpper());
         a2Filename = QString("%1M.BIN").arg(imageName.toUpper());
+    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
+        savedFilename = QString("%1/%2.A2FM").arg(tmpDirPath,imageName.toUpper());
+        a2Filename = QString("%1.A2FM").arg(imageName.toUpper());
     }
 
 
