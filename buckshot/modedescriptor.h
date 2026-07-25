@@ -44,6 +44,8 @@ struct ModeDescriptor {
 
     // image2shr: conversion target
     QString shrTarget;               // "shr320-color16", ...
+    bool shrHasScbModes = false;     // only color256 has an SCB choice; the
+                                     // other targets reject --scb-mode values
 
     // output/save facts
     QString outputFileName;          // file the converter leaves in the temp dir

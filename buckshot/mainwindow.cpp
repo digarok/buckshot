@@ -125,6 +125,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // MATCH THE image2shr CLI DEFAULTS, BUT START ON A COLOR MODE
     ui->comboBox_shrTarget->setCurrentText("SHR 320 Color 256");
     ui->comboBox_shrDither->setCurrentText("Floyd-Steinberg");
+    updateShrControls();
 
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
     updateDisplayModes();
@@ -406,7 +407,9 @@ void MainWindow::runShrConversion(const ModeDescriptor &mode)
     params.shrSerpentine = ui->checkBox_shrSerpentine->isChecked();
     params.shrFit = ui->comboBox_shrFit->currentData().toString();
     params.shrAspect = ui->comboBox_shrAspect->currentData().toString();
-    params.shrScbMode = ui->comboBox_shrScbMode->currentData().toString();
+    // OMITTED ENTIRELY FOR TARGETS WITH NO SCB CHOICE - THEY REJECT THE FLAG
+    params.shrScbMode = mode.shrHasScbModes
+            ? ui->comboBox_shrScbMode->currentData().toString() : QString();
     params.shrFormat = format;
 
     QString converterPath = QString("%1/image2shr").arg(QCoreApplication::applicationDirPath());
@@ -864,7 +867,19 @@ void MainWindow::on_tabWidget_engine_currentChanged(int /*unused*/)
 
 void MainWindow::on_comboBox_shrTarget_currentIndexChanged(int /*unused*/)
 {
+    updateShrControls();
     updateNeeded = 1;
+}
+
+
+// DIM THE SCB MODE CONTROL FOR TARGETS THAT REJECT --scb-mode
+// (single-palette targets and Brooks 3200, which has no SCBs at all)
+void MainWindow::updateShrControls()
+{
+    const ModeDescriptor *mode = findMode(ui->comboBox_shrTarget->currentText());
+    bool hasScbModes = mode && mode->shrHasScbModes;
+    ui->label_shrScbMode->setEnabled(hasScbModes);
+    ui->comboBox_shrScbMode->setEnabled(hasScbModes);
 }
 
 void MainWindow::on_comboBox_shrDither_currentIndexChanged(int /*unused*/)

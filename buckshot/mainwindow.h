@@ -65,6 +65,7 @@ private:
     void updateInputSize();
     void livePreview();
     void updateDisplayModes();
+    void updateShrControls();
     bool check_canSave();
     bool check_canPreview();
 

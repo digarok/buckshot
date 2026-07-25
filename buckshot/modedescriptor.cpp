@@ -41,7 +41,9 @@ static QStringList buildShrArgs(const ModeDescriptor &mode, const ConversionPara
     }
     args << "--fit" << params.shrFit;
     args << "--aspect" << params.shrAspect;
-    args << "--scb-mode" << params.shrScbMode;
+    if (!params.shrScbMode.isEmpty()) {
+        args << "--scb-mode" << params.shrScbMode;
+    }
     args << "--format" << params.shrFormat;
     args << "--preview-png" << params.previewPath;
     args << "--json";
@@ -66,39 +68,46 @@ const QVector<ModeDescriptor> &allModes()
         { "LR", Engine::B2D,
           "L", true, {2, 3}, 0,
           QString(),
+          false,
           "SAVED.SLO", "LR (*.SLO)", "06", "0400",
           buildB2dArgs },
         { "DLR", Engine::B2D,
           "DL", true, {2, 3}, 1,
           QString(),
+          false,
           "SAVED.DLO", "DLR (*.DLO)", "06", "0400",
           buildB2dArgs },
         { "HGR", Engine::B2D,
           "H", false, {0, 1}, 2,
           QString(),
+          false,
           // b2d names HGR output <NAME><options>.BIN; "H" yields options "CH"
           "SAVEDCH.BIN", "HGR (*.BIN)", "06", "2000",
           buildB2dArgs },
         { "HGR Nearest Pixel Group", Engine::B2D,
           "hgr2", false, {0, 1}, 2,   // tohgr-style alternate HGR conversion
           QString(),
+          false,
           "SAVEDCA.BIN", "HGR (*.BIN)", "06", "2000",
           buildB2dArgs },
         { "DHGR", Engine::B2D,
           "D", false, {0, 1}, 3,
           QString(),
+          false,
           "SAVED.A2FC", "DHGR (*.A2FC)", "06", "2000",
           buildB2dArgs },
         { "HGR MONO", Engine::B2D,
           // b2d picks HGR mono output from the 280 x 192 input size
           "mono", false, {0, 1, 2, 4, 5, 6, 7}, 3,
           QString(),
+          false,
           "SAVEDM.BIN", "HGR (*.BIN)", "06", "2000",
           buildB2dArgs },
         { "DHGR MONO", Engine::B2D,
           // b2d picks DHGR mono output from the 560 x 384 input size
           "mono", false, {0, 1, 2, 3, 4, 6, 7}, 5,
           QString(),
+          false,
           "SAVED.A2FM", "DHGR MONO (*.A2FM)", "06", "2000",
           buildB2dArgs },
         // image2shr scales the source itself, so the resolution fields are unused.
@@ -107,21 +116,25 @@ const QVector<ModeDescriptor> &allModes()
         { "SHR 320 Grey 16", Engine::Image2SHR,
           QString(), false, {}, 0,
           "shr320-grey16",
+          false,
           "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
           buildShrArgs },
         { "SHR 320 Color 16", Engine::Image2SHR,
           QString(), false, {}, 0,
           "shr320-color16",
+          false,
           "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
           buildShrArgs },
         { "SHR 320 Color 256", Engine::Image2SHR,
           QString(), false, {}, 0,
           "shr320-color256",
+          true,   // the one target where --scb-mode is a real choice
           "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
           buildShrArgs },
         { "SHR 320 Color 3200", Engine::Image2SHR,
           QString(), false, {}, 0,
           "shr320-color3200",
+          false,
           "SAVED.3200", "Brooks 3200 (*.3200)", "C1", "0002",
           buildShrArgs },
     };
