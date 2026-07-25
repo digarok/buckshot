@@ -403,7 +403,8 @@ void MainWindow::runShrConversion(const ModeDescriptor &mode)
     params.previewPath = shrPreviewImgPath;
     params.extraArgsText = ui->lineEdit_addArgs->text();
     params.shrDither = ui->comboBox_shrDither->currentData().toString();
-    params.shrDitherStrength = ui->doubleSpinBox_shrDitherStrength->value();
+    // SLIDER IS 0-100; image2shr TAKES 0.0-1.0
+    params.shrDitherStrength = ui->horizontalSlider_shrDitherStrength->value() / 100.0;
     params.shrSerpentine = ui->checkBox_shrSerpentine->isChecked();
     params.shrFit = ui->comboBox_shrFit->currentData().toString();
     params.shrAspect = ui->comboBox_shrAspect->currentData().toString();
@@ -887,8 +888,13 @@ void MainWindow::on_comboBox_shrDither_currentIndexChanged(int /*unused*/)
     updateNeeded = 1;
 }
 
-void MainWindow::on_doubleSpinBox_shrDitherStrength_valueChanged(double /*unused*/)
+void MainWindow::on_horizontalSlider_shrDitherStrength_valueChanged(int value)
 {
+    if (value==0){
+        ui->label_shrDitherStrengthValue->setText("Off");
+    } else {
+        ui->label_shrDitherStrengthValue->setText(QString::number(value));
+    }
     updateNeeded = 1;
 }
 

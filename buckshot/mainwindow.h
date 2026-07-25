@@ -50,7 +50,7 @@ private slots:
     void on_tabWidget_engine_currentChanged(int index);
     void on_comboBox_shrTarget_currentIndexChanged(int index);
     void on_comboBox_shrDither_currentIndexChanged(int index);
-    void on_doubleSpinBox_shrDitherStrength_valueChanged(double value);
+    void on_horizontalSlider_shrDitherStrength_valueChanged(int value);
     void on_checkBox_shrSerpentine_stateChanged(int arg1);
     void on_comboBox_shrFit_currentIndexChanged(int index);
     void on_comboBox_shrAspect_currentIndexChanged(int index);
