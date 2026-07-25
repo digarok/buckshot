@@ -35,9 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     previewImgPath = QString("%1/%2_Preview.bmp").arg(tmpDirPath).arg(imageName);
 
     // POPULATE FORMAT COMBOBOX
-    QStringList outputFormats;
-    outputFormats << "LR" << "DLR" << "HGR" << "HGR Nearest Pixel Group" << "DHGR" << "HGR MONO" << "DHGR MONO";
-    ui->comboBox_outputFormat->addItems(outputFormats);
+    ui->comboBox_outputFormat->addItems(modeNamesForEngine(Engine::B2D));
 
     // POPULATE RESOLUTION COMBOBOX
     QStringList inputResolutions;
@@ -109,6 +107,15 @@ MainWindow::~MainWindow()
 }
 
 
+// The active display mode's descriptor: the single source of truth for
+// converter arguments, output filenames, and ProDOS metadata.
+const ModeDescriptor &MainWindow::currentMode() const
+{
+    const ModeDescriptor *mode = findMode(ui->comboBox_outputFormat->currentText());
+    return mode ? *mode : allModes().first();
+}
+
+
 bool MainWindow::check_canPreview()
 {
     if (ui->label_source->pixmap().isNull()) {
@@ -132,18 +139,9 @@ bool MainWindow::check_canSave()
 
 void MainWindow::updateDisplayModes() {
 
-    QList<int> disabledList = QList<int>();
+    const ModeDescriptor &mode = currentMode();
+    QList<int> disabledList = mode.disabledResolutions;
 
-    //---- display modes
-    // 0  "40 x 48   - Full Scale LGR (LGR ONLY)"
-    // 1  "80 x 48   - Full Scale DLGR (DLGR ONLY)"
-    // 2  "140 x 192 - Full Scale (HGR & DHGR)"
-    // 3  "280 x 192 - Double Width Scale (HGR & DHGR)"
-    // 4  "320 x 200 - Classic Size"
-    // 5  "560 x 384 - Quadruple Width, Double Height Scale"
-    // 6  "640 x 400 - Classic Size"
-    // 7  "640 x 480 - Classic Size";
-    
     // Enable all first
     QList<int> enabledList = QList<int>() << 0 << 1 << 2 << 3 << 4 << 5 << 6 << 7;
     QListIterator<int> e(enabledList);
@@ -156,35 +154,10 @@ void MainWindow::updateDisplayModes() {
         ui->comboBox_inputResolution->model()->setData(index, vEnable, Qt::UserRole - 1);
     }
 
-    // SET DISABLED ITEMS LIST - AND DEFAULT RESOLUTION FOR MODE
-    int defaultIndex = 2;
-    if (ui->comboBox_outputFormat->currentText() == "LR") {
-        disabledList << 2 << 3;
-        defaultIndex = 0;
-    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
-        disabledList << 2 << 3;
-        defaultIndex = 1;
-    }  else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
-        // b2d picks HGR mono output from the 280 x 192 input size
-        disabledList << 0 << 1 << 2 << 4 << 5 << 6 << 7;
-        defaultIndex = 3;
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
-        // b2d picks DHGR mono output from the 560 x 384 input size
-        disabledList << 0 << 1 << 2 << 3 << 4 << 6 << 7;
-        defaultIndex = 5;
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
-        disabledList << 0 << 1;
-        defaultIndex = 3;
-    } else {
-        // HGR & HGR Nearest Pixel Group
-        disabledList << 0 << 1;
-        defaultIndex = 2;
-    }
-
     // KEEP THE CURRENT RESOLUTION WHEN THE NEW MODE STILL SUPPORTS IT,
     // OTHERWISE FALL BACK TO THE MODE'S DEFAULT
     if (disabledList.contains(ui->comboBox_inputResolution->currentIndex())) {
-        ui->comboBox_inputResolution->setCurrentIndex(defaultIndex);
+        ui->comboBox_inputResolution->setCurrentIndex(mode.defaultResolution);
     }
 
     // NOW ACTUALLY DISABLE INVALID RESOLUTIONS IN THE COMBOBOX
@@ -284,55 +257,22 @@ void MainWindow::on_pushButton_preview_clicked()
     QPixmap scaledPixmap = ui->label_source->pixmap().scaled(inputWidth,inputHeight);
     scaledPixmap.save(inputImgPath,"BMP", 0);
 
-    // NOW FIND OUR OUTPUT FORMAT
-    QString outputFormat = "H";     // HIRES
-    if (ui->comboBox_outputFormat->currentText() == "LR") {
-        outputFormat = "L";
-    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
-        outputFormat = "DL";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
-        outputFormat = "H";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
-        outputFormat = "hgr2";  // tohgr-style alternate HGR conversion
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
-        outputFormat = "D";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO"
-               || ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
-        outputFormat = "mono";  // input resolution selects HGR vs DHGR mono
-    }
+    // BUILD THE CONVERTER COMMAND FROM THE MODE DESCRIPTOR
+    const ModeDescriptor &mode = currentMode();
 
-    QString converterPath = "/Users/dbrock/appleiigs/grlib/b2d";
-    converterPath = QString("%1/b2d").arg(QCoreApplication::applicationDirPath());
+    ConversionParams params;
+    params.inputPath = inputImgPath;   // "/tmp/saved.bmp"
+    params.crossHatch = ui->horizontalSlider_crossHatch->value();
+    params.colorBleed = ui->horizontalSlider_colorBleed->value();
+    params.ditherIndex = ui->comboBox_dithering->currentIndex();
+    // MUST ALWAYS HAVE A "V" FLAG TO GENERATE OUR PREVIEW IMAGE
+    params.paletteIndex = ui->comboBox_previewPalette->currentIndex();
+    params.extraArgsText = ui->lineEdit_addArgs->text();
+
+    QString converterPath = QString("%1/b2d").arg(QCoreApplication::applicationDirPath());
 
     QProcess process;
-    QStringList args;
-    args << inputImgPath;   // "/tmp/saved.bmp"
-    args << outputFormat;
-    if (outputFormat == "DL" || outputFormat == "L") {
-        args << "N";
-    }
-
-    if (ui->horizontalSlider_crossHatch->value() > 0) {
-        QString crossHatchArg = QString("Z%1").arg(ui->horizontalSlider_crossHatch->value());
-        args << crossHatchArg;
-    }
-    if (ui->horizontalSlider_colorBleed->value() > 0) {
-        QString colorBleedArg = QString("R%1").arg(ui->horizontalSlider_colorBleed->value());
-        args << colorBleedArg;
-    }
-
-    if (ui->comboBox_dithering->currentIndex() > 0) {
-        QString ditherArg = QString("D%1").arg(ui->comboBox_dithering->currentIndex());
-        args << ditherArg;
-    }
-
-    // MUST ALWAYS HAVE A "V" FLAG TO GENERATE OUR PREVIEW IMAGE
-    if (ui->comboBox_previewPalette->currentIndex() > -1) {
-        QString ppalArg = QString("V%1").arg(ui->comboBox_previewPalette->currentIndex());
-        args << ppalArg;
-    }
-
-    args << ui->lineEdit_addArgs->text();
+    QStringList args = mode.buildArgs(mode, params);
 
     // RUN THE CONVERTER SCRIPT
     process.start(converterPath,args);
@@ -442,41 +382,10 @@ void MainWindow::on_pushButton_saveImage_clicked()
 {
     if (!check_canSave()) return;
 
-    QString a2filename;
-    QString suffix;
+    const ModeDescriptor &mode = currentMode();
+    QString a2filename = QString("%1/%2").arg(tmpDirPath, mode.outputFileName);
     QString filters = QString("All Images (*.A2FC *.A2FM *.BIN *.SLO *.DLO);;HGR (*.BIN);;DHGR (*.A2FC);;DHGR MONO (*.A2FM);;LR (*.SLO);;DLR (*.DLO);;All files (*.*)");
-    QString defaultFilter;
-
-    if (ui->comboBox_outputFormat->currentText() == "LR") {
-        a2filename = QString("%1/%2.SLO").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".SLO";
-        defaultFilter = "LR (*.SLO)";
-    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
-        a2filename = QString("%1/%2.DLO").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".DLO";
-        defaultFilter = "DLR (*.DLO)";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
-        a2filename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".BIN";
-        defaultFilter = "HGR (*.BIN)";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
-        // b2d names HGR output <NAME><options>.BIN; "hgr2" yields options "CA"
-        a2filename = QString("%1/%2CA.BIN").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".BIN";
-        defaultFilter = "HGR (*.BIN)";
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
-        a2filename = QString("%1/%2.A2FC").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".A2FC";
-        defaultFilter = "DHGR (*.A2FC)";
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
-        a2filename = QString("%1/%2M.BIN").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".BIN";
-        defaultFilter = "HGR (*.BIN)";
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
-        a2filename = QString("%1/%2.A2FM").arg(tmpDirPath,imageName.toUpper());
-        suffix = ".A2FM";
-        defaultFilter = "DHGR MONO (*.A2FM)";
-    }
+    QString defaultFilter = mode.saveFilter;
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
     QString saveFile = QFileDialog::getSaveFileName(nullptr, "Save file", QDir::currentPath(), filters, &defaultFilter);
@@ -502,8 +411,9 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
 
     // MYPICBIN=Type(06),AuxType(2000),VersionCreate(70),MinVersion(BE),Access(E3),FolderInfo1(000000000000000000000000000000000000),FolderInfo2(000000000000000000000000000000000000)
-    QString filetype = "06";
-    QString auxtype = "2000";
+    const ModeDescriptor &mode = currentMode();
+    QString filetype = mode.prodosFileType;
+    QString auxtype = mode.prodosAuxType;
 
 
     QString suffix = ".po";
@@ -618,32 +528,8 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
 
 
-    QString a2Filename;
-    QString savedFilename;
-    if (ui->comboBox_outputFormat->currentText() == "LR") {
-        savedFilename = QString("%1/%2.SLO").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1.SLO").arg(imageName.toUpper());
-        auxtype = "0400";    // different auxtype (not that it matters)
-    } else if (ui->comboBox_outputFormat->currentText() == "DLR") {
-        savedFilename = QString("%1/%2.DLO").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1.DLO").arg(imageName.toUpper());
-        auxtype = "0400";    // different auxtype (not that it matters)
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR") {
-        savedFilename = QString("%1/%2CH.BIN").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1CH.BIN").arg(imageName.toUpper());
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR Nearest Pixel Group") {
-        savedFilename = QString("%1/%2CA.BIN").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1CA.BIN").arg(imageName.toUpper());
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR") {
-        savedFilename = QString("%1/%2.A2FC").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1.A2FC").arg(imageName.toUpper());
-    } else if (ui->comboBox_outputFormat->currentText() == "HGR MONO") {
-        savedFilename = QString("%1/%2M.BIN").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1M.BIN").arg(imageName.toUpper());
-    } else if (ui->comboBox_outputFormat->currentText() == "DHGR MONO") {
-        savedFilename = QString("%1/%2.A2FM").arg(tmpDirPath,imageName.toUpper());
-        a2Filename = QString("%1.A2FM").arg(imageName.toUpper());
-    }
+    QString a2Filename = mode.outputFileName;
+    QString savedFilename = QString("%1/%2").arg(tmpDirPath, a2Filename);
 
 
     bool ok = false;
@@ -701,7 +587,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
         QString fileinfo_file = QString("%1/_FileInformation.txt").arg(tmpDirPath);
         //qDebug() << "TMP FILE: " << fileinfo_file;
         QFile file( fileinfo_file );
-        if (file.open(QIODevice::ReadWrite)) {
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             QTextStream stream( &file );
             stream << fileinfo_text << Qt::endl;
         }
@@ -743,7 +629,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
                 QStringList addfile2_args;
                 addfile2_args << "ADDFILE" << prodosImageFile << prodosVolumeName << saveFile;   // our tmp file
 
-                addfile2_process.start(cadiusPath,addfile_args);
+                addfile2_process.start(cadiusPath,addfile2_args);
                 addfile2_process.waitForFinished();  // BLOCKS!!!
                 QString addfile2_output = QString(addfile2_process.readAllStandardOutput());
 

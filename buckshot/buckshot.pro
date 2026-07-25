@@ -18,9 +18,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp\
+        modedescriptor.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h\
+        modedescriptor.h
 
 FORMS    += mainwindow.ui
 

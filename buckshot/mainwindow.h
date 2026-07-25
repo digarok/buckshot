@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QTemporaryDir>
 
+#include "modedescriptor.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -47,6 +49,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    const ModeDescriptor &currentMode() const;
     void updateInputSize();
     void livePreview();
     void updateDisplayModes();
