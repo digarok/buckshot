@@ -47,9 +47,21 @@ private slots:
 
     void on_pushButton_savePreview_clicked();
 
+    void on_tabWidget_engine_currentChanged(int index);
+    void on_comboBox_shrTarget_currentIndexChanged(int index);
+    void on_comboBox_shrDither_currentIndexChanged(int index);
+    void on_doubleSpinBox_shrDitherStrength_valueChanged(double value);
+    void on_checkBox_shrSerpentine_stateChanged(int arg1);
+    void on_comboBox_shrFit_currentIndexChanged(int index);
+    void on_comboBox_shrAspect_currentIndexChanged(int index);
+    void on_comboBox_shrScbMode_currentIndexChanged(int index);
+    void on_comboBox_shrFormat_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
     const ModeDescriptor &currentMode() const;
+    void runB2dConversion(const ModeDescriptor &mode);
+    void runShrConversion(const ModeDescriptor &mode);
     void updateInputSize();
     void livePreview();
     void updateDisplayModes();
@@ -70,6 +82,15 @@ private:
     QString inputImgPath;
     QString previewImgPath;
     QString outputImgPath;
+
+    QString shrPreviewImgPath;
+    QString shrOutputPath;       // set per conversion; honors a --format brooks override
+    QString shrJsonFileType;     // ProDOS type/aux reported by image2shr --json
+    QString shrJsonAuxType;
+
+    // What the preview pixmap was generated with, so saves refuse stale results.
+    Engine lastPreviewEngine = Engine::B2D;
+    QString lastPreviewModeName;
 };
 
 #endif // MAINWINDOW_H

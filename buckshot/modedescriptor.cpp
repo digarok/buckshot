@@ -26,6 +26,31 @@ static QStringList buildB2dArgs(const ModeDescriptor &mode, const ConversionPara
     return args;
 }
 
+// image2shr invocation: convert [flags] <input>
+// All flags precede the positional input path (Go flag parsing).
+// --json is always requested so results (ProDOS type/aux, warnings) can be read.
+static QStringList buildShrArgs(const ModeDescriptor &mode, const ConversionParams &params)
+{
+    QStringList args;
+    args << "convert";
+    args << "-t" << mode.shrTarget;
+    args << "--dither" << params.shrDither;
+    args << "--dither-strength" << QString::number(params.shrDitherStrength);
+    if (params.shrSerpentine) {
+        args << "--serpentine";
+    }
+    args << "--fit" << params.shrFit;
+    args << "--aspect" << params.shrAspect;
+    args << "--scb-mode" << params.shrScbMode;
+    args << "--format" << params.shrFormat;
+    args << "--preview-png" << params.previewPath;
+    args << "--json";
+    args << "-o" << params.outputPath;
+    args += params.extraArgsText.split(' ', Qt::SkipEmptyParts);
+    args << params.inputPath;
+    return args;
+}
+
 //---- input resolutions (comboBox_inputResolution indices)
 // 0  "40 x 48   - Full Scale LGR (LGR ONLY)"
 // 1  "80 x 48   - Full Scale DLGR (DLGR ONLY)"
@@ -76,6 +101,29 @@ const QVector<ModeDescriptor> &allModes()
           QString(),
           "SAVED.A2FM", "DHGR MONO (*.A2FM)", "06", "2000",
           buildB2dArgs },
+        // image2shr scales the source itself, so the resolution fields are unused.
+        // outputFileName/type/aux reflect --format auto; a brooks override at
+        // runtime switches to SAVED.3200 and the --json-reported type/aux.
+        { "SHR 320 Grey 16", Engine::Image2SHR,
+          QString(), false, {}, 0,
+          "shr320-grey16",
+          "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
+          buildShrArgs },
+        { "SHR 320 Color 16", Engine::Image2SHR,
+          QString(), false, {}, 0,
+          "shr320-color16",
+          "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
+          buildShrArgs },
+        { "SHR 320 Color 256", Engine::Image2SHR,
+          QString(), false, {}, 0,
+          "shr320-color256",
+          "SAVED.SHR", "SHR (*.SHR)", "C1", "0000",
+          buildShrArgs },
+        { "SHR 320 Color 3200", Engine::Image2SHR,
+          QString(), false, {}, 0,
+          "shr320-color3200",
+          "SAVED.3200", "Brooks 3200 (*.3200)", "C1", "0002",
+          buildShrArgs },
     };
     return modes;
 }

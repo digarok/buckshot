@@ -9,6 +9,9 @@
 #include "qformlayout.h"
 #include "qdialogbuttonbox.h"
 #include <QRegularExpression>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 const QString MainWindow::programName = QString("buckshot");
 const QString MainWindow::version = QString("0.06.0");
 const QString MainWindow::imageName = QString("saved");
@@ -33,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // AND NOW THE PATHNAMES FOR OUR CACHE FILES
     inputImgPath = QString("%1/%2.bmp").arg(tmpDirPath).arg(imageName);
     previewImgPath = QString("%1/%2_Preview.bmp").arg(tmpDirPath).arg(imageName);
+    shrPreviewImgPath = QString("%1/shr_preview.png").arg(tmpDirPath);
 
     // POPULATE FORMAT COMBOBOX
     ui->comboBox_outputFormat->addItems(modeNamesForEngine(Engine::B2D));
@@ -85,6 +89,43 @@ MainWindow::MainWindow(QWidget *parent) :
             << "tohgr NTSC HGR";
     ui->comboBox_previewPalette->addItems(previewPalettes);
 
+    // POPULATE THE IIgs SHR (image2shr) TAB
+    // Display text is friendly; the CLI token rides along as item data.
+    ui->comboBox_shrTarget->addItems(modeNamesForEngine(Engine::Image2SHR));
+
+    ui->comboBox_shrDither->addItem("None", "none");
+    ui->comboBox_shrDither->addItem("Floyd-Steinberg", "floyd-steinberg");
+    ui->comboBox_shrDither->addItem("Atkinson", "atkinson");
+    ui->comboBox_shrDither->addItem("Jarvis", "jarvis");
+    ui->comboBox_shrDither->addItem("Sierra", "sierra");
+    ui->comboBox_shrDither->addItem("Bayer 2x2", "bayer2");
+    ui->comboBox_shrDither->addItem("Bayer 4x4", "bayer4");
+    ui->comboBox_shrDither->addItem("Bayer 8x8", "bayer8");
+
+    ui->comboBox_shrFit->addItem("Contain", "contain");
+    ui->comboBox_shrFit->addItem("Cover", "cover");
+    ui->comboBox_shrFit->addItem("Stretch", "stretch");
+    ui->comboBox_shrFit->addItem("None", "none");
+
+    ui->comboBox_shrAspect->addItem("Correct", "correct");
+    ui->comboBox_shrAspect->addItem("Ignore", "ignore");
+
+    ui->comboBox_shrScbMode->addItem("Auto", "auto");
+    ui->comboBox_shrScbMode->addItem("Single", "single");
+    ui->comboBox_shrScbMode->addItem("Banded", "banded");
+    ui->comboBox_shrScbMode->addItem("Grouped", "grouped");
+    ui->comboBox_shrScbMode->addItem("Per-Line", "per-line");
+
+    ui->comboBox_shrFormat->addItem("Auto", "auto");
+    ui->comboBox_shrFormat->addItem("Raw", "raw");
+    ui->comboBox_shrFormat->addItem("Packed", "packed");
+    ui->comboBox_shrFormat->addItem("APF", "apf");
+    ui->comboBox_shrFormat->addItem("Brooks 3200", "brooks");
+
+    // MATCH THE image2shr CLI DEFAULTS, BUT START ON A COLOR MODE
+    ui->comboBox_shrTarget->setCurrentText("SHR 320 Color 256");
+    ui->comboBox_shrDither->setCurrentText("Floyd-Steinberg");
+
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
     updateDisplayModes();
 
@@ -109,9 +150,15 @@ MainWindow::~MainWindow()
 
 // The active display mode's descriptor: the single source of truth for
 // converter arguments, output filenames, and ProDOS metadata.
+// The selected tab picks the engine.
 const ModeDescriptor &MainWindow::currentMode() const
 {
-    const ModeDescriptor *mode = findMode(ui->comboBox_outputFormat->currentText());
+    const ModeDescriptor *mode = nullptr;
+    if (ui->tabWidget_engine->currentWidget() == ui->tab_shr) {
+        mode = findMode(ui->comboBox_shrTarget->currentText());
+    } else {
+        mode = findMode(ui->comboBox_outputFormat->currentText());
+    }
     return mode ? *mode : allModes().first();
 }
 
@@ -130,6 +177,13 @@ bool MainWindow::check_canSave()
 {
     if (ui->label_preview->pixmap().isNull()) {
         ui->plainTextEdit_lastCmd->setPlainText("Please open a source image and run a preview first!");
+        repaint();
+        return false;
+    }
+    // TWO ENGINES SHARE ONE PREVIEW — REFUSE TO SAVE A STALE RESULT
+    const ModeDescriptor &mode = currentMode();
+    if (lastPreviewEngine != mode.engine || lastPreviewModeName != mode.name) {
+        ui->plainTextEdit_lastCmd->setPlainText("Settings changed since the last preview - run a preview first!");
         repaint();
         return false;
     }
@@ -250,6 +304,17 @@ void MainWindow::on_pushButton_preview_clicked()
 {
     if (!check_canPreview()) return;
 
+    const ModeDescriptor &mode = currentMode();
+    if (mode.engine == Engine::Image2SHR) {
+        runShrConversion(mode);
+    } else {
+        runB2dConversion(mode);
+    }
+}
+
+
+void MainWindow::runB2dConversion(const ModeDescriptor &mode)
+{
     // GET SCALE FACTOR
     updateInputSize();
 
@@ -258,8 +323,6 @@ void MainWindow::on_pushButton_preview_clicked()
     scaledPixmap.save(inputImgPath,"BMP", 0);
 
     // BUILD THE CONVERTER COMMAND FROM THE MODE DESCRIPTOR
-    const ModeDescriptor &mode = currentMode();
-
     ConversionParams params;
     params.inputPath = inputImgPath;   // "/tmp/saved.bmp"
     params.crossHatch = ui->horizontalSlider_crossHatch->value();
@@ -279,6 +342,12 @@ void MainWindow::on_pushButton_preview_clicked()
     process.waitForFinished();  // BLOCKS!!!
 
     QString commandString = QString("%1 %2").arg(converterPath, args.join(" "));
+    if (process.error() == QProcess::FailedToStart) {
+        ui->plainTextEdit_lastCmd->document()->setPlainText(
+            QString("b2d not found at %1 - it should sit next to the buckshot executable.").arg(converterPath));
+        repaint();
+        return;
+    }
     //qDebug() << commandString;
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
@@ -299,6 +368,105 @@ void MainWindow::on_pushButton_preview_clicked()
     }
     ui->label_preview->setPixmap(previewPix);
     ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(qRound(realScale)));
+
+    lastPreviewEngine = mode.engine;
+    lastPreviewModeName = mode.name;
+    repaint();
+}
+
+
+void MainWindow::runShrConversion(const ModeDescriptor &mode)
+{
+    ConversionParams params;
+
+    // FEED image2shr THE ORIGINAL FILE WHEN IT CAN READ IT DIRECTLY -
+    // ITS OWN FIT/ASPECT RESAMPLING FROM FULL RESOLUTION BEATS A
+    // PRE-SCALED BMP. OTHERWISE DUMP THE SOURCE PIXMAP UNSCALED.
+    QString sourceFile = ui->lineEdit_sourceFilename->text();
+    QFileInfo sourceInfo(sourceFile);
+    static const QStringList shrReadableFormats = {"png", "jpg", "jpeg", "gif", "bmp"};
+    if (sourceInfo.isFile() && shrReadableFormats.contains(sourceInfo.suffix().toLower())) {
+        params.inputPath = sourceFile;
+    } else {
+        params.inputPath = QString("%1/source_full.png").arg(tmpDirPath);
+        ui->label_source->pixmap().save(params.inputPath, "PNG");
+    }
+
+    // .3200 WHENEVER THE EFFECTIVE OUTPUT IS BROOKS FORMAT
+    QString format = ui->comboBox_shrFormat->currentData().toString();
+    bool brooks = (format == "brooks")
+            || (format == "auto" && mode.shrTarget == "shr320-color3200");
+    shrOutputPath = QString("%1/%2").arg(tmpDirPath, brooks ? "SAVED.3200" : "SAVED.SHR");
+
+    params.outputPath = shrOutputPath;
+    params.previewPath = shrPreviewImgPath;
+    params.extraArgsText = ui->lineEdit_addArgs->text();
+    params.shrDither = ui->comboBox_shrDither->currentData().toString();
+    params.shrDitherStrength = ui->doubleSpinBox_shrDitherStrength->value();
+    params.shrSerpentine = ui->checkBox_shrSerpentine->isChecked();
+    params.shrFit = ui->comboBox_shrFit->currentData().toString();
+    params.shrAspect = ui->comboBox_shrAspect->currentData().toString();
+    params.shrScbMode = ui->comboBox_shrScbMode->currentData().toString();
+    params.shrFormat = format;
+
+    QString converterPath = QString("%1/image2shr").arg(QCoreApplication::applicationDirPath());
+    QStringList args = mode.buildArgs(mode, params);
+    QString commandString = QString("%1 %2").arg(converterPath, args.join(" "));
+
+    QProcess process;
+    process.start(converterPath, args);
+    bool finished = process.waitForFinished(20000);
+
+    if (process.error() == QProcess::FailedToStart) {
+        ui->plainTextEdit_lastCmd->document()->setPlainText(
+            QString("image2shr not found at %1 - download it from github.com/digarok/image2shr/releases "
+                    "and place it next to the buckshot executable.").arg(converterPath));
+        repaint();
+        return;
+    }
+    if (!finished) {
+        process.kill();
+        process.waitForFinished(2000);
+        ui->plainTextEdit_lastCmd->document()->setPlainText(
+            QString("image2shr timed out after 20 seconds: %1").arg(commandString));
+        repaint();
+        return;
+    }
+    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
+        QString stderrText = QString(process.readAllStandardError()).trimmed();
+        ui->plainTextEdit_lastCmd->document()->setPlainText(
+            QString("image2shr failed (exit %1): %2\n%3")
+                .arg(process.exitCode()).arg(commandString, stderrText));
+        repaint();
+        return;
+    }
+
+    // PARSE THE --json REPORT: ProDOS TYPE/AUX (TRACKS --format) AND WARNINGS
+    shrJsonFileType.clear();
+    shrJsonAuxType.clear();
+    QString logText = commandString;
+    QJsonParseError jsonError;
+    QJsonDocument doc = QJsonDocument::fromJson(process.readAllStandardOutput(), &jsonError);
+    if (jsonError.error == QJsonParseError::NoError && doc.isObject()) {
+        QJsonObject result = doc.object();
+        QJsonObject prodos = result.value("prodos").toObject();
+        // "$C1"/"$0000" -> "C1"/"0000" as cadius wants them
+        shrJsonFileType = prodos.value("file_type_hex").toString().remove('$');
+        shrJsonAuxType = prodos.value("aux_type_hex").toString().remove('$');
+        const QJsonArray warnings = result.value("warnings").toArray();
+        for (const QJsonValue &warning : warnings) {
+            logText += QString("\nWarning: %1").arg(warning.toString());
+        }
+    }
+    ui->plainTextEdit_lastCmd->document()->setPlainText(logText);
+
+    // SHR PREVIEW IS ALWAYS 320x200 - SHOWN 1:1
+    QPixmap previewPix(shrPreviewImgPath);
+    ui->label_preview->setPixmap(previewPix);
+    ui->groupBox_preview->setTitle("Preview - Scale 1");
+
+    lastPreviewEngine = mode.engine;
+    lastPreviewModeName = mode.name;
     repaint();
 }
 
@@ -384,8 +552,14 @@ void MainWindow::on_pushButton_saveImage_clicked()
 
     const ModeDescriptor &mode = currentMode();
     QString a2filename = QString("%1/%2").arg(tmpDirPath, mode.outputFileName);
-    QString filters = QString("All Images (*.A2FC *.A2FM *.BIN *.SLO *.DLO);;HGR (*.BIN);;DHGR (*.A2FC);;DHGR MONO (*.A2FM);;LR (*.SLO);;DLR (*.DLO);;All files (*.*)");
+    QString filters = QString("All Images (*.A2FC *.A2FM *.BIN *.SLO *.DLO *.SHR *.3200);;HGR (*.BIN);;DHGR (*.A2FC);;DHGR MONO (*.A2FM);;LR (*.SLO);;DLR (*.DLO);;SHR (*.SHR);;Brooks 3200 (*.3200);;All files (*.*)");
     QString defaultFilter = mode.saveFilter;
+
+    // SHR OUTPUT NAME CAN DIFFER FROM THE TABLE WHEN --format OVERRIDES IT
+    if (mode.engine == Engine::Image2SHR && !shrOutputPath.isEmpty()) {
+        a2filename = shrOutputPath;
+        defaultFilter = shrOutputPath.endsWith(".3200") ? "Brooks 3200 (*.3200)" : "SHR (*.SHR)";
+    }
 
     // PROMPT FOR SAVE FILENAME AND COPY (HOPEFULLY) TO SAVE FILENAME
     QString saveFile = QFileDialog::getSaveFileName(nullptr, "Save file", QDir::currentPath(), filters, &defaultFilter);
@@ -414,6 +588,13 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     const ModeDescriptor &mode = currentMode();
     QString filetype = mode.prodosFileType;
     QString auxtype = mode.prodosAuxType;
+
+    // FOR SHR, PREFER WHAT image2shr --json REPORTED - IT TRACKS --format
+    // VARIANTS (raw/packed/apf/brooks) WITHOUT US HARDCODING IIgs LORE
+    if (mode.engine == Engine::Image2SHR) {
+        if (!shrJsonFileType.isEmpty()) filetype = shrJsonFileType;
+        if (!shrJsonAuxType.isEmpty()) auxtype = shrJsonAuxType;
+    }
 
 
     QString suffix = ".po";
@@ -530,6 +711,10 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
 
     QString a2Filename = mode.outputFileName;
     QString savedFilename = QString("%1/%2").arg(tmpDirPath, a2Filename);
+    if (mode.engine == Engine::Image2SHR && !shrOutputPath.isEmpty()) {
+        savedFilename = shrOutputPath;
+        a2Filename = QFileInfo(shrOutputPath).fileName();
+    }
 
 
     bool ok = false;
@@ -542,7 +727,7 @@ void MainWindow::on_pushButton_saveToProdos_clicked()
     QFormLayout form(&dialog);
 
     // Add some text above the fields
-    form.addRow(new QLabel(tr("Save Image to ProDOS")));
+    form.addRow(new QLabel(tr("Save Image to ProDOS  (filetype $%1)").arg(filetype)));
 
     // Add the lineEdits with their respective labels
     QList<QLineEdit *> fields;
@@ -666,6 +851,52 @@ void MainWindow::on_comboBox_dithering_currentIndexChanged(int /*unused*/)
 }
 
 void MainWindow::on_comboBox_previewPalette_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+// SWITCHING TABS SWITCHES ENGINES - REFRESH THE PREVIEW FOR THE NEW ONE
+void MainWindow::on_tabWidget_engine_currentChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrTarget_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrDither_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_doubleSpinBox_shrDitherStrength_valueChanged(double /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_checkBox_shrSerpentine_stateChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrFit_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrAspect_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrScbMode_currentIndexChanged(int /*unused*/)
+{
+    updateNeeded = 1;
+}
+
+void MainWindow::on_comboBox_shrFormat_currentIndexChanged(int /*unused*/)
 {
     updateNeeded = 1;
 }
