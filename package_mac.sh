@@ -38,3 +38,8 @@ chmod +x b2d/b2d # @TODO: Fix me
 cp b2d/b2d $CONTENTDIR/MacOS
 cp cadius/cadius $CONTENTDIR/MacOS
 
+GOARCH=$( [ "$(uname -m)" = "arm64" ] && echo arm64 || echo amd64 )
+curl -s -L -o image2shr https://github.com/digarok/image2shr/releases/download/v0.1.0/image2shr-darwin-${GOARCH}
+chmod +x image2shr
+cp image2shr $CONTENTDIR/MacOS
+

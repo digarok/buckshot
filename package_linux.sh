@@ -29,6 +29,11 @@ chmod +x b2d/b2d # @TODO: Fix me
 cp b2d/b2d $PACKAGEDIR
 cp cadius/cadius $PACKAGEDIR
 
+GOARCH=$( [ "$(uname -m)" = "aarch64" ] && echo arm64 || echo amd64 )
+curl -s -L -o image2shr https://github.com/digarok/image2shr/releases/download/v0.1.0/image2shr-linux-${GOARCH}
+chmod +x image2shr
+cp image2shr $PACKAGEDIR
+
 echo "${ID}: INSTALL EXTRA DEV PACKAGES"
 sudo apt-get install -y libxkbcommon-x11-0 libxcb-cursor0
 

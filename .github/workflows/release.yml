@@ -77,6 +77,8 @@ jobs:
         Invoke-WebRequest -Uri $url -OutFile cadius.zip
         7z.exe x cadius.zip
         cp build/Src/Debug/Cadius.exe buckshot
+        $url = "https://github.com/digarok/image2shr/releases/download/v0.1.0/image2shr-windows-amd64.exe"
+        Invoke-WebRequest -Uri $url -OutFile buckshot\image2shr.exe
         7z.exe a buckshot.zip buckshot\*
         mv buckshot.zip ..
 
