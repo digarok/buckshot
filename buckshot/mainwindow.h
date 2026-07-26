@@ -28,6 +28,7 @@ private slots:
 
 
     void on_pushButton_sourceFilename_clicked();
+    void on_actionOpen_Source_Image_triggered();
 
     void on_horizontalSlider_crossHatch_valueChanged(int value);
     void on_horizontalSlider_colorBleed_valueChanged(int value);
@@ -65,6 +66,7 @@ private:
     void runShrConversion(const ModeDescriptor &mode);
     void showPreviewAndSource(const QPixmap &previewPix);
     void updateInputSize();
+    void updateScaleLabel(int outWidth, int outHeight);
     void livePreview();
     void updateDisplayModes();
     void updateShrControls();

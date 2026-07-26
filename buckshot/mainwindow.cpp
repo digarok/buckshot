@@ -249,6 +249,13 @@ void MainWindow::on_pushButton_sourceFilename_clicked()
 }
 
 
+// FILE > OPEN SOURCE IMAGE - SAME DIALOG AS THE BUTTON
+void MainWindow::on_actionOpen_Source_Image_triggered()
+{
+    on_pushButton_sourceFilename_clicked();
+}
+
+
 void MainWindow::updateInputSize()
 {
     switch (ui->comboBox_inputResolution->currentIndex()) {
@@ -289,10 +296,20 @@ void MainWindow::updateInputSize()
         break;
     }
 
+}
+
+
+// THE "OUTPUT RESOLUTION" AND "SCALE" READOUTS NEXT TO THE SOURCE
+// RESOLUTION: WHAT THE CONVERTER PRODUCED, AND OUTPUT SIZE OVER SOURCE
+// SIZE, PER AXIS
+void MainWindow::updateScaleLabel(int outWidth, int outHeight)
+{
+    ui->label_outputResolution->setText(QString("%1 x %2").arg(outWidth).arg(outHeight));
+
     QSize sourceSize = sourcePixmap.size();
-    double sx = static_cast<double>(inputWidth) / sourceSize.width();
-    double sy = static_cast<double>(inputHeight) / sourceSize.height();
-    QString scaleString = QString("%1 x %2").arg(sx).arg(sy);
+    double sx = static_cast<double>(outWidth) / sourceSize.width();
+    double sy = static_cast<double>(outHeight) / sourceSize.height();
+    QString scaleString = QString("%1 x %2").arg(sx, 0, 'f', 2).arg(sy, 0, 'f', 2);
     ui->label_scaleFactor->setText(scaleString);
 }
 
@@ -358,7 +375,14 @@ void MainWindow::runB2dConversion(const ModeDescriptor &mode)
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
     // ALL DONE SO TRY TO LOAD PREVIEW
-    showPreviewAndSource(QPixmap(previewImgPath));
+    QPixmap previewPix(previewImgPath);
+    showPreviewAndSource(previewPix);
+
+    // SCALE READOUT COMPARES THE SOURCE TO WHAT THE CONVERTER ACTUALLY
+    // PRODUCED, NOT TO THE INTERMEDIATE INPUT RESOLUTION
+    if (!previewPix.isNull()) {
+        updateScaleLabel(previewPix.width(), previewPix.height());
+    }
 
     lastPreviewEngine = mode.engine;
     lastPreviewModeName = mode.name;
@@ -392,6 +416,10 @@ void MainWindow::showPreviewAndSource(const QPixmap &previewPix)
 
 void MainWindow::runShrConversion(const ModeDescriptor &mode)
 {
+    // EVERY SHR TARGET RENDERS THE 320 x 200 SCREEN - KEEP THE SCALE
+    // READOUT LIVE JUST LIKE THE b2d PATH DOES VIA updateInputSize()
+    updateScaleLabel(320, 200);
+
     ConversionParams params;
 
     // FEED image2shr THE ORIGINAL FILE WHEN IT CAN READ IT DIRECTLY -
