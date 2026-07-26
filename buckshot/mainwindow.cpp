@@ -381,7 +381,8 @@ void MainWindow::showPreviewAndSource(const QPixmap &previewPix)
 
     // FastTransformation keeps the upscaled pixels crisp
     ui->label_preview->setPixmap(previewPix.scaled(displaySize));
-    ui->groupBox_preview->setTitle(QString("Preview - Scale %1x").arg(scale));
+    // THE PANES NO LONGER HAVE TITLES, SO THE SCALE READOUT GOES TO THE LOG
+    ui->plainTextEdit_lastCmd->appendPlainText(QString("Preview scale: %1x").arg(scale));
 
     // THE CONVERTERS MAP THE FULL SOURCE ONTO THE OUTPUT, SO STRETCH LIKEWISE
     ui->label_source->setPixmap(sourcePixmap.scaled(displaySize,
