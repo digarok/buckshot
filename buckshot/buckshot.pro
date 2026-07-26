@@ -33,6 +33,11 @@ FORMS    += mainwindow.ui
 RESOURCES += \
     assets.qrc
 
+# App icon: qmake copies the .icns into Contents/Resources and points
+# CFBundleIconFile at it; on Windows it embeds the .ico as the exe resource.
+macx: ICON = ../assets/icons.icns
+win32: RC_ICONS = ../assets/icon.ico
+
 # For issues of launching from Ubuntu desktops
 linux: QMAKE_LFLAGS += -no-pie
 
