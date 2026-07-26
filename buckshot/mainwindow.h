@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPixmap>
 #include <QTemporaryDir>
 
 #include "modedescriptor.h"
@@ -62,6 +63,7 @@ private:
     const ModeDescriptor &currentMode() const;
     void runB2dConversion(const ModeDescriptor &mode);
     void runShrConversion(const ModeDescriptor &mode);
+    void showPreviewAndSource(const QPixmap &previewPix);
     void updateInputSize();
     void livePreview();
     void updateDisplayModes();
@@ -69,6 +71,7 @@ private:
     bool check_canSave();
     bool check_canPreview();
 
+    QPixmap sourcePixmap;   // original full-res source; the labels only show scaled copies
     int inputWidth;
     int inputHeight;
     bool updateNeeded;

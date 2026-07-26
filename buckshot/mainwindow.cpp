@@ -166,7 +166,7 @@ const ModeDescriptor &MainWindow::currentMode() const
 
 bool MainWindow::check_canPreview()
 {
-    if (ui->label_source->pixmap().isNull()) {
+    if (sourcePixmap.isNull()) {
         ui->plainTextEdit_lastCmd->setPlainText("Please open a source image to run a preview!");
         repaint();
         return false;
@@ -234,8 +234,11 @@ void MainWindow::on_pushButton_sourceFilename_clicked()
     if (!filename.isEmpty()) {
         ui->lineEdit_sourceFilename->setText(filename);
         QPixmap mypix(filename);
-        ui->label_source->setPixmap(mypix);
-        ui->label_source->setScaledContents(true);
+        sourcePixmap = mypix;
+        // FILL THE PANE UNTIL THE FIRST PREVIEW RESIZES IT TO MATCH
+        ui->label_source->setScaledContents(false);
+        ui->label_source->setPixmap(sourcePixmap.scaled(ui->label_source->size(),
+                                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
         QSize sourceSize = mypix.size();
         QString resolutionString = QString("%1 x %2").arg(sourceSize.width()).arg(sourceSize.height());
         ui->label_sourceResolution->setText(resolutionString);
@@ -284,7 +287,7 @@ void MainWindow::updateInputSize()
         break;
     }
 
-    QSize sourceSize = ui->label_source->pixmap().size();
+    QSize sourceSize = sourcePixmap.size();
     double sx = static_cast<double>(inputWidth) / sourceSize.width();
     double sy = static_cast<double>(inputHeight) / sourceSize.height();
     QString scaleString = QString("%1 x %2").arg(sx).arg(sy);
@@ -320,7 +323,7 @@ void MainWindow::runB2dConversion(const ModeDescriptor &mode)
     updateInputSize();
 
     // NOW GENERATE SCALED QPIXMAP TO SAVE
-    QPixmap scaledPixmap = ui->label_source->pixmap().scaled(inputWidth,inputHeight);
+    QPixmap scaledPixmap = sourcePixmap.scaled(inputWidth,inputHeight);
     scaledPixmap.save(inputImgPath,"BMP", 0);
 
     // BUILD THE CONVERTER COMMAND FROM THE MODE DESCRIPTOR
@@ -353,26 +356,34 @@ void MainWindow::runB2dConversion(const ModeDescriptor &mode)
     ui->plainTextEdit_lastCmd->document()->setPlainText(commandString);
 
     // ALL DONE SO TRY TO LOAD PREVIEW
-    QPixmap previewPix(previewImgPath);
-    float realScale = 1;
-    if (previewPix.width() == 80) {
-        int scale = 3;
-        realScale = scale;
-        previewPix = previewPix.scaled(80*scale, 48*scale);
-        //qDebug() << "W80";
-    }
-    if (previewPix.width() == 560) {
-        float scale = 0.5f;
-        realScale = scale;
-        previewPix = previewPix.scaled(qRound(560*scale),qRound(384*scale), Qt::KeepAspectRatio,Qt::SmoothTransformation);
-        //qDebug() << "W560";
-    }
-    ui->label_preview->setPixmap(previewPix);
-    ui->groupBox_preview->setTitle(QString("Preview - Scale %1").arg(qRound(realScale)));
+    showPreviewAndSource(QPixmap(previewImgPath));
 
     lastPreviewEngine = mode.engine;
     lastPreviewModeName = mode.name;
     repaint();
+}
+
+
+// SHOW THE PREVIEW AT THE LARGEST PIXEL-PERFECT INTEGER SCALE THAT FITS
+// THE PANE, AND SHOW THE SOURCE AT EXACTLY THE SAME DISPLAYED SIZE SO THE
+// TWO COMPARE 1:1.
+void MainWindow::showPreviewAndSource(const QPixmap &previewPix)
+{
+    if (previewPix.isNull()) {
+        return;
+    }
+    QSize pane = ui->label_preview->size();
+    int scale = qMax(1, qMin(pane.width() / previewPix.width(),
+                             pane.height() / previewPix.height()));
+    QSize displaySize = previewPix.size() * scale;
+
+    // FastTransformation keeps the upscaled pixels crisp
+    ui->label_preview->setPixmap(previewPix.scaled(displaySize));
+    ui->groupBox_preview->setTitle(QString("Preview - Scale %1x").arg(scale));
+
+    // THE CONVERTERS MAP THE FULL SOURCE ONTO THE OUTPUT, SO STRETCH LIKEWISE
+    ui->label_source->setPixmap(sourcePixmap.scaled(displaySize,
+                                                    Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 }
 
 
@@ -390,7 +401,7 @@ void MainWindow::runShrConversion(const ModeDescriptor &mode)
         params.inputPath = sourceFile;
     } else {
         params.inputPath = QString("%1/source_full.png").arg(tmpDirPath);
-        ui->label_source->pixmap().save(params.inputPath, "PNG");
+        sourcePixmap.save(params.inputPath, "PNG");
     }
 
     // .3200 WHENEVER THE EFFECTIVE OUTPUT IS BROOKS FORMAT
@@ -464,10 +475,7 @@ void MainWindow::runShrConversion(const ModeDescriptor &mode)
     }
     ui->plainTextEdit_lastCmd->document()->setPlainText(logText);
 
-    // SHR PREVIEW IS ALWAYS 320x200 - SHOWN 1:1
-    QPixmap previewPix(shrPreviewImgPath);
-    ui->label_preview->setPixmap(previewPix);
-    ui->groupBox_preview->setTitle("Preview - Scale 1");
+    showPreviewAndSource(QPixmap(shrPreviewImgPath));
 
     lastPreviewEngine = mode.engine;
     lastPreviewModeName = mode.name;
