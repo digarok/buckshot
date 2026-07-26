@@ -7,6 +7,7 @@
 #include "qmessagebox.h"
 #include "qinputdialog.h"
 #include "qformlayout.h"
+#include "qpainter.h"
 #include "qdialogbuttonbox.h"
 #include <QRegularExpression>
 #include <QJsonArray>
@@ -408,9 +409,58 @@ void MainWindow::showPreviewAndSource(const QPixmap &previewPix)
     // THE PANES NO LONGER HAVE TITLES, SO THE SCALE READOUT GOES TO THE LOG
     ui->plainTextEdit_lastCmd->appendPlainText(QString("Preview scale: %1x").arg(scale));
 
-    // THE CONVERTERS MAP THE FULL SOURCE ONTO THE OUTPUT, SO STRETCH LIKEWISE
-    ui->label_source->setPixmap(sourcePixmap.scaled(displaySize,
-                                                    Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    // b2d MAPS THE FULL SOURCE ONTO THE OUTPUT, SO STRETCH LIKEWISE;
+    // image2shr PLACES THE SOURCE PER ITS FIT/ASPECT SETTINGS, SO MIRROR THAT
+    if (currentMode().engine == Engine::Image2SHR) {
+        ui->label_source->setPixmap(renderShrSourcePane(displaySize));
+    } else {
+        ui->label_source->setPixmap(sourcePixmap.scaled(displaySize,
+                                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    }
+}
+
+
+// THE SOURCE PANE TWIN OF image2shr's prepare.Resample: PLACE THE SOURCE IN
+// THE 320 x 200 FRAMEBUFFER EXACTLY WHERE THE CONVERTER PUTS IT (SAME FIT
+// MODE, SAME LETTERBOX/CROP, SAME PIXEL-ASPECT SQUEEZE) SO THE TWO PANES
+// COMPARE 1:1.
+QPixmap MainWindow::renderShrSourcePane(const QSize &displaySize) const
+{
+    const QString fit = ui->comboBox_shrFit->currentData().toString();
+    const bool correctAspect =
+            ui->comboBox_shrAspect->currentData().toString() == "correct";
+
+    const double fbW = 320.0, fbH = 200.0;
+    // ON THE 4:3 SCREEN A 320-MODE PIXEL IS 1.2x TALLER THAN WIDE; "CORRECT"
+    // FITS IN DISPLAY UNITS (320 x 240) SO PROPORTIONS SURVIVE ON REAL
+    // HARDWARE - WHICH READS AS A VERTICAL SQUEEZE ON OUR SQUARE-PIXEL PANES
+    const double par = correctAspect ? (fbW / fbH) * 3.0 / 4.0 : 1.0;
+    const double srcW = sourcePixmap.width(), srcH = sourcePixmap.height();
+
+    QRectF drawRect(0, 0, fbW, fbH);  // framebuffer coordinates; stretch fills
+    if (fit == "none") {
+        // 1 SOURCE PIXEL = 1 SHR PIXEL, CENTERED (TRUNCATING LIKE THE Go CODE)
+        drawRect = QRectF((320 - sourcePixmap.width()) / 2,
+                          (200 - sourcePixmap.height()) / 2, srcW, srcH);
+    } else if (fit == "contain" || fit == "cover") {
+        const double dispW = fbW, dispH = fbH * par;
+        const double sx = dispW / srcW, sy = dispH / srcH;
+        const double s = (fit == "cover") ? qMax(sx, sy) : qMin(sx, sy);
+        const double drawW = srcW * s, drawH = srcH * s;
+        drawRect = QRectF((dispW - drawW) / 2, (dispH - drawH) / 2 / par,
+                          drawW, drawH / par);
+    }
+
+    const double kx = displaySize.width() / fbW;
+    const double ky = displaySize.height() / fbH;
+    QPixmap canvas(displaySize);
+    canvas.fill(Qt::black);
+    QPainter painter(&canvas);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.drawPixmap(QRectF(drawRect.x() * kx, drawRect.y() * ky,
+                              drawRect.width() * kx, drawRect.height() * ky),
+                       sourcePixmap, sourcePixmap.rect());
+    return canvas;
 }
 
 

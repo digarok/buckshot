@@ -3,3 +3,6 @@ Makefile
 
 build-buckshot-Desktop*
 *.o
+*.pro.user*
+build/
+.qtcreator/
