@@ -38,7 +38,7 @@ private slots:
     void on_checkBox_livePreview_stateChanged(int arg1);
     void previewTimerTimeout();
 
-    void on_actionWhat_is_this_triggered();
+    void on_actionAbout_Buckshot_triggered();
 
     void on_pushButton_preview_clicked();
     void on_pushButton_saveImage_clicked();

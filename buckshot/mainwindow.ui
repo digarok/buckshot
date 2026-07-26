@@ -726,7 +726,7 @@
     <property name="title">
      <string>About</string>
     </property>
-    <addaction name="actionWhat_is_this"/>
+    <addaction name="actionAbout_Buckshot"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAbout"/>
@@ -739,9 +739,9 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionWhat_is_this">
+  <action name="actionAbout_Buckshot">
    <property name="text">
-    <string>What is this?</string>
+    <string>About Buckshot</string>
    </property>
   </action>
  </widget>

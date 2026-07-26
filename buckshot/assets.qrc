@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/icons">
+        <file alias="appicon.png">../assets/icon512.png</file>
         <file>resources/binary.png</file>
         <file>resources/disk.png</file>
         <file>resources/image.png</file>

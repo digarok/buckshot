@@ -13,7 +13,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 const QString MainWindow::programName = QString("buckshot");
-const QString MainWindow::version = QString("0.07.0");
+const QString MainWindow::version = QString("0.8.0");
 const QString MainWindow::imageName = QString("saved");
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -573,19 +573,23 @@ void MainWindow::on_checkBox_livePreview_stateChanged(int arg1)
 }
 
 
-void MainWindow::on_actionWhat_is_this_triggered()
+void MainWindow::on_actionAbout_Buckshot_triggered()
 {
     QMessageBox msgBox;
-    msgBox.setText("Image conversion tool for OSX/Windows/Linux\n"
-                   "Take modern image formats (PNG, JPEG, BMP, etc) and convert them for use in your Apple II programs or just for fun.\n\n\n"
+    msgBox.setWindowTitle("About Buckshot");
+    msgBox.setIconPixmap(QPixmap(":/icons/appicon.png").scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    msgBox.setText(QString("%1 v%2\n").arg(programName, version) +
+                   "Image conversion tool for macOS/Windows/Linux\n"
+                   "Convert modern image formats (PNG, JPEG, BMP, etc) into native Apple II and Apple IIgs graphics for your programs, or just for fun.\n\n\n"
                    "*USAGE*\n"
-                   "Once you start the program, just \"Open Source Image\", select the \"Apple ][ Display Mode\" you want to convert your image to, "
-                   "and click \"Preview\", or even better, click the \"Live Preview\" checkbox to get real-time feedback on your conversion settings.\n\n"
-                   "The \"8-bit (b2d)\" tab converts for the Apple II/II+/IIe/IIc display modes, and the \"IIgs SHR (image2shr)\" tab converts to Apple IIgs Super Hi-Res.\n\n"
-                   "Once you are satisfied with your conversion settings, click \"Save Image File\" to save in one of the Apple ][ image formats based on the display mode.  "
-                   "If you want to save that image file directly to a ProDOS volume, that is now supported via the \"Save To ProDOS\" function!\n\n"
-                   "Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
-                   "(c)2016-2020 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels, CADIUS is by Brutal Deluxe, and image2shr is by Dagen Brock.");
+                   "1. Click \"Open Source Image\" and pick a picture.\n\n"
+                   "2. Choose a display mode: the \"8-bit (b2d)\" tab covers the classic Apple II/II+/IIe/IIc modes (HGR, DHGR, LR, DLR), "
+                   "and the \"IIgs SHR (image2shr)\" tab handles Apple IIgs Super Hi-Res conversions, including Brooks 3200-color output.\n\n"
+                   "3. Click \"Preview\", or check \"Live Preview\" for real-time feedback as you adjust conversion settings.\n\n"
+                   "4. Click \"Save Image File\" to save in the Apple ][ image format for that display mode, "
+                   "or use \"Save To ProDOS\" to write it directly onto a ProDOS volume.\n\n"
+                   "Then load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.\n\n"
+                   "(c)2016-2026 Dagen Brock *\n\n\n * bmp2dhr is by Bill Buckels, CADIUS is by Brutal Deluxe, and image2shr is by Dagen Brock.");
     msgBox.exec();
 }
 
