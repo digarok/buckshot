@@ -1,42 +1,56 @@
 # buckshot
-An image conversion tool for Mac OSX, Windows and Linux.  Take modern image formats (PNG, JPEG, BMP, etc) and convert them for use in your Apple II programs or just for fun.
+An image conversion tool for macOS, Windows and Linux.  Take modern image formats (PNG, JPEG, BMP, etc) and convert them for use in your Apple II programs or just for fun.  Supports classic Apple ][ display modes (LGR, DLGR, HGR, DHGR) as well as Apple IIgs Super Hi-Res (SHR).
 
 ![Screenshot of starting the program](doc/web/Screenshot.png "Screenshot of starting the program")
 
 # Installation and Launching
-The fastest way to get started is to go here [https://apple2.gs/buckshot](https://apple2.gs/buckshot) where you can download the latest builds for Mac OSX, Windows and Linux.
+The fastest way to get started is to go here [https://apple2.gs/buckshot](https://apple2.gs/buckshot) where you can download the latest builds for macOS, Windows and Linux.
 
-### Mac OSX
-Download and open the DMG file.  Drag buckshot into your applications and launch it from there.  
-NOTE! Recent MacOS versions require you to open the "Applications" folder in Finder and right-click -> Choose "Open", as a ~~gatekeeping~~ security precaution.)
+### macOS
+Download and open the DMG file.  Drag buckshot into your Applications folder and launch it from there.
+
+Because buckshot isn't signed/notarized with Apple, modern macOS will block it on first launch.  The old "right-click -> Open" trick no longer works on current macOS versions.  Instead:
+
+1. Double-click buckshot.  macOS will refuse to open it — dismiss the dialog (click "Done", **not** "Move to Trash").
+2. Open **System Settings -> Privacy & Security**, scroll down to the Security section, and next to the message about buckshot being blocked click **"Open Anyway"**.
+3. Confirm in the dialog that appears (you may need to authenticate).  This only needs to be done once.
+
+Alternatively, from Terminal you can remove the quarantine flag directly:
+```
+xattr -cr /Applications/buckshot.app
+```
 
 ### Windows
-Download and unzip to the folder where you want it installed.  Simply run the buckshot.exe from there. 
-Note: Windows may warn and require you to "run anyway".
+Download and unzip to the folder where you want it installed, then run `buckshot.exe` from there.
+
+Because buckshot isn't code-signed, modern Windows will warn you on first launch:
+
+- If SmartScreen shows **"Windows protected your PC"**, click **"More info"** and then **"Run anyway"**.
+- If you don't see a "More info" link, unblock the file first: right-click `buckshot.exe` (or the downloaded ZIP before extracting) -> **Properties** -> check **"Unblock"** at the bottom of the General tab -> OK, then run it again.
 
 ### Linux (Debian)
 Download and unzip and run `AppRun`.  If you have problems see the README file. 
 
 # Usage
 
-Once you start the program, just "Open Source Image", select the "Apple ][ Display Mode" you want to convert your image to, and click "Preview", or even better, click the "Live Preview" checkbox to get real-time feedback on your conversion settings.  Once you are satisfied with your conversion settings, click "Save Image File" to save in one of the Apple ][ image formats based on the display mode.  If you want to save that image file directly to a ProDOS volume, that is now supported via the "Save To ProDOS" function!  Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.
+Once you start the program, just "Open Source Image", select the "Apple ][ Display Mode" you want to convert your image to, and click "Preview", or even better, click the "Live Preview" checkbox to get real-time feedback on your conversion settings.  Display modes cover the classic Apple ][ formats (LGR, DLGR, HGR, DHGR — including monochrome variants) as well as Apple IIgs Super Hi-Res (SHR) with dithering and fit/aspect options.  Once you are satisfied with your conversion settings, click "Save Image File" to save in one of the Apple ][ image formats based on the display mode.  If you want to save that image file directly to a ProDOS volume, that is now supported via the "Save To ProDOS" function!  Then you can load it up in your favorite emulator, or transfer it to real disks/flash storage to view on glorious vintage hardware.
 
 # Build
-This project is written in C++ using the Qt framework.  It calls out to two external binaries for image conversion ([b2d](http://www.appleoldies.ca/bmp2dhr/)) and ProDOS volume support ([CADIUS](http://www.brutaldeluxe.fr/products/crossdevtools/cadius/)).
+This project is written in C++ using the Qt 6 framework.  It calls out to three external binaries: [b2d](http://www.appleoldies.ca/bmp2dhr/) for classic Apple ][ image conversion, [image2shr](https://github.com/digarok/image2shr) for Apple IIgs SHR conversion, and [CADIUS](http://www.brutaldeluxe.fr/products/crossdevtools/cadius/) for ProDOS volume support.
 
-You can build and run the project without those them, but it won't be able to generate previews or save to ProDOS volumes without those two 3rd-party binaries.  The authors of those projects are not involved with this project, but have graciously encouraged my integration attempts with this software.
+You can build and run the project without them, but it won't be able to generate previews or save to ProDOS volumes without those 3rd-party binaries.  The authors of those projects are not involved with this project, but have graciously encouraged my integration attempts with this software.
 
-I maintain public builds of both utilities for all supported operating systems available here:
+I maintain public builds of these utilities for all supported operating systems available here:
 
 - https://github.com/digarok/cadius/releases/
 - https://github.com/digarok/b2d/releases/
+- https://github.com/digarok/image2shr/releases/
 
-You will need to copy the binaries of those two programs for your platform into the build directory you are running.
+You will need to copy the binaries of those programs for your platform into the build directory you are running.
 
-Example for Mac OSX "Release" build:
+Example for a macOS "Release" build:
 ```
-cp ../b2d build-buckshot-Desktop_Qt_5_7_0_clang_64bit-Release/buckshot.app/Contents/MacOS/
-cp ../Cadius build-buckshot-Desktop_Qt_5_7_0_clang_64bit-Release/buckshot.app/Contents/MacOS/
+cp ../b2d ../Cadius ../image2shr build/Desktop-Release/buckshot.app/Contents/MacOS/
 ```
 In this example I obviously have the files stored in a parent directory outside of the project folder.
 
