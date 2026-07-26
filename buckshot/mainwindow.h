@@ -65,6 +65,7 @@ private:
     void runB2dConversion(const ModeDescriptor &mode);
     void runShrConversion(const ModeDescriptor &mode);
     void showPreviewAndSource(const QPixmap &previewPix);
+    QPixmap renderShrSourcePane(const QSize &displaySize) const;
     void updateInputSize();
     void updateScaleLabel(int outWidth, int outHeight);
     void livePreview();
