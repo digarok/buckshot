@@ -123,8 +123,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBox_shrFormat->addItem("Brooks 3200", "brooks");
 
     // MATCH THE image2shr CLI DEFAULTS, BUT START ON A COLOR MODE
+    // AND STRETCH-TO-FIT LIKE THE b2d PIPELINE DOES
     ui->comboBox_shrTarget->setCurrentText("SHR 320 Color 256");
     ui->comboBox_shrDither->setCurrentText("Floyd-Steinberg");
+    ui->comboBox_shrFit->setCurrentText("Stretch");
     updateShrControls();
 
     // HANDLE DISPLAY MODE SELECTION (COMPATIBILITY)
