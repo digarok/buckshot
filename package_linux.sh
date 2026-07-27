@@ -21,7 +21,7 @@ cp assets/examples/* $PACKAGEDIR/
 
 echo "${ID}: DOWNLOAD UTILITY BINARIES"
 curl -s -L -o cadius.zip https://github.com/digarok/cadius/releases/download/0.0.0/cadius-ubuntu-latest-0.0.0.zip
-curl -s -L -o b2d.zip https://github.com/digarok/b2d/releases/download/v1.4/b2d-ubuntu-latest-v1.4.zip
+curl -s -L -o b2d.zip https://github.com/digarok/b2d/releases/download/v1.5/b2d-ubuntu-latest-v1.5.zip
 unzip -o cadius.zip -d cadius
 unzip -o b2d.zip -d b2d
 echo "${ID}: COPY UTILITY BINARIES"
@@ -30,7 +30,7 @@ cp b2d/b2d $PACKAGEDIR
 cp cadius/cadius $PACKAGEDIR
 
 GOARCH=$( [ "$(uname -m)" = "aarch64" ] && echo arm64 || echo amd64 )
-curl -s -L -o image2shr https://github.com/digarok/image2shr/releases/download/v0.1.0/image2shr-linux-${GOARCH}
+curl -s -L -o image2shr https://github.com/digarok/image2shr/releases/download/v0.2.0/image2shr-linux-${GOARCH}
 chmod +x image2shr
 cp image2shr $PACKAGEDIR
 
